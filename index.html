@@ -481,14 +481,16 @@ body.booted .view{animation:homeIn 1.1s var(--ease) both}
    ===================================================================== */
 const CONFIG = {
   osName: "lumen",
-  version: "2.3",                // shown on the home screen; matches the folder name
+  version: "2.6",                // shown on the home screen; matches the folder name
   homeStyle: "rail",            // home screen layout: "dock" | "grid" | "rail"  (try ?home=grid in a browser)
   screensaverMinutes: 4,        // home screen idles into the ambient clock (0 = never)
   sounds: true,                 // interface sounds (power, clicks, app opening, hover ticks...)
   volume: 0.7,                  // 0.0 - 1.0 master volume for interface sounds
   hoverTicks: true,             // tiny tick when the pointer moves onto a tile
   syncPlayback: true,           // late joiners jump to the same moment of a video
-  youtubeApiKey: "",            // optional: shows YouTube search results inside lumen (see README)
+  youtubeApiKey: "",            // optional: your own YouTube Data API key (search works without it, see below)
+  // Search servers used when there's no API key: public Piped instances. The first one that answers is remembered.
+  searchServers: ["https://api.piped.private.coffee", "https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de", "https://pipedapi.leptons.xyz", "https://pipedapi.reallyaweso.me"],
 
   tube: {                       // YouTube content
     rows: [
@@ -998,7 +1000,7 @@ function renderMusicBrowse() {
 }
 function renderMusicPlayer(key, i, single) {
   const st = musicStation(key);
-  const list = st ? st.songs : [{ id: single, title: "", sub: "" }];
+  const list = st ? st.songs : [{ id: single, title: P.get("t") || "", sub: P.get("a") || "" }];
   i = Math.max(0, Math.min(list.length - 1, i));
   const order = [...list.slice(i), ...list.slice(0, i)];
   const first = order[0];
@@ -1050,20 +1052,14 @@ function renderMusicPlayer(key, i, single) {
   setupHudIdle();
 }
 async function renderMusicSearch(q) {
-  if (!CONFIG.youtubeApiKey) return webSearch("music", q);
   const a = APPS.find(x => x.id === "music");
   $("#app").innerHTML = view("appview theme-music", `${appbar(a, "Search songs, artists, or paste a YouTube link")}
     <div class="row"><h3>Songs for “${esc(q)}”</h3></div><div class="grid" id="res"><div class="empty glass">Searching…</div></div>`);
   $(".search input").value = q;
   try {
-    const r = await fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&videoEmbeddable=true&maxResults=24&q=" + encodeURIComponent(q) + "&key=" + CONFIG.youtubeApiKey);
-    const j = await r.json(); if (!r.ok) throw new Error((j.error && j.error.message) || r.status);
-    const items = (j.items || []).filter(it => it.id && it.id.videoId);
-    $("#res").innerHTML = items.length ? items.map(it => `<button class="card sq" data-go='${attr({ app: "music", v: it.id.videoId })}'><div class="thumb"><img src="${ytThumb(it.id.videoId)}" alt="" onerror="${imgFail}"></div><div class="t">${esc(decodeEnt(it.snippet.title))}</div><div class="s">${esc(decodeEnt(it.snippet.channelTitle))}</div></button>`).join("") : `<div class="empty glass">No songs found.</div>`;
-  } catch (err) {
-    $("#res").innerHTML = `<div class="empty glass">Search didn't work (${esc(err.message)}). Opening YouTube Music search instead…</div>`;
-    setTimeout(() => location.replace(SEARCH_URL.music(q)), 1800);
-  }
+    const items = await ytSearch(q, true);
+    $("#res").innerHTML = items.length ? items.map(it => `<button class="card sq" data-go='${attr({ app: "music", v: it.id, t: it.title, a: it.sub.split(" · ")[0] })}'><div class="thumb"><img src="${ytThumb(it.id)}" alt="" onerror="${imgFail}"></div><div class="t">${esc(it.title)}</div><div class="s">${esc(it.sub)}</div></button>`).join("") : `<div class="empty glass">No songs found.</div>`;
+  } catch (err) { $("#res").innerHTML = searchFail("music", q, err); }
 }
 
 /* ---------- LIVE (Twitch) ---------- */
@@ -1133,22 +1129,46 @@ function webSearch(app, q) {
     <div class="empty glass" style="margin-top:5rem;text-align:center"><b>Searching “${esc(q)}”…</b><br>Opening ${a.name} search for everyone. To come back, click the TV (not the screen) and pick Home.</div>`);
   setTimeout(() => location.replace(SEARCH_URL[app](q)), 1100);
 }
+/* ---------- in-app YouTube search (results stay inside lumen) ---------- */
+const fmtDur = d => !(d > 0) ? "" : (d >= 3600 ? Math.floor(d / 3600) + ":" + String(Math.floor(d / 60) % 60).padStart(2, "0") : Math.floor(d / 60)) + ":" + String(d % 60).padStart(2, "0");
+async function ytSearch(q, music) {
+  if (CONFIG.youtubeApiKey) {          // your own key, if you added one
+    const r = await fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&maxResults=24" +
+      (music ? "&videoCategoryId=10" : "") + "&q=" + encodeURIComponent(q) + "&key=" + CONFIG.youtubeApiKey);
+    const j = await r.json();
+    if (r.ok) return (j.items || []).filter(it => it.id && it.id.videoId).map(it => ({ id: it.id.videoId, title: decodeEnt(it.snippet.title), sub: decodeEnt(it.snippet.channelTitle) }));
+  }
+  const pref = store.get("searchOk", "");
+  const servers = [...new Set([pref, ...CONFIG.searchServers].filter(Boolean))];
+  const filters = music ? ["music_songs", "videos"] : ["videos"];
+  for (const f of filters) for (const base of servers) {
+    try {
+      const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 7000);
+      const r = await fetch(`${base}/search?q=${encodeURIComponent(q)}&filter=${f}`, { signal: ctl.signal });
+      clearTimeout(t);
+      if (!r.ok) continue;
+      const j = await r.json();
+      const items = (j.items || []).filter(x => x.url && /watch\?v=/.test(x.url) && !x.isShort)
+        .map(x => ({ id: x.url.split("v=")[1].slice(0, 11), title: x.title || "", sub: [x.uploaderName, fmtDur(x.duration)].filter(Boolean).join(" · ") }));
+      if (items.length) { store.set("searchOk", base); return items; }
+    } catch (e) { /* try the next server */ }
+  }
+  throw new Error("the search servers are busy right now");
+}
+function searchFail(app, q, err) {
+  return `<div class="empty glass"><b>Couldn't search right now</b> (${esc(err.message)}).<br>Give it a few seconds and try again — you can also paste a YouTube link straight into the search box.
+    <div style="margin-top:1rem;display:flex;gap:.6rem;justify-content:center"><button class="pill primary" data-go='${attr({ app, find: q, t: now() })}'>Try again</button>
+    <button class="pill glass" data-open="${esc(SEARCH_URL[app](q))}">Open on YouTube instead</button></div></div>`;
+}
 async function renderTubeSearch(q) {
-  if (!CONFIG.youtubeApiKey) return webSearch("tube", q);
   const a = APPS[0];
   $("#app").innerHTML = view("appview theme-tube", `${appbar(a, "Search YouTube or paste a link")}
     <div class="row"><h3>Results for “${esc(q)}”</h3></div><div class="grid" id="res"><div class="empty glass">Searching…</div></div>`);
   $(".search input").value = q;
   try {
-    const r = await fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&maxResults=24&safeSearch=moderate&q=" + encodeURIComponent(q) + "&key=" + CONFIG.youtubeApiKey);
-    const j = await r.json();
-    if (!r.ok) throw new Error((j.error && j.error.message) || r.status);
-    const items = (j.items || []).filter(it => it.id && it.id.videoId).map(it => ({ id: it.id.videoId, title: decodeEnt(it.snippet.title), sub: decodeEnt(it.snippet.channelTitle) }));
+    const items = await ytSearch(q, false);
     $("#res").innerHTML = items.length ? items.map(tubeCard).join("") : `<div class="empty glass">No results for that one.</div>`;
-  } catch (err) {
-    $("#res").innerHTML = `<div class="empty glass">Search didn't work (${esc(err.message)}). Opening YouTube search instead…</div>`;
-    setTimeout(() => location.replace(SEARCH_URL.tube(q)), 1800);
-  }
+  } catch (err) { $("#res").innerHTML = searchFail("tube", q, err); }
 }
 
 /* ---------- BROWSER ---------- */
