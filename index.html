@@ -79,6 +79,29 @@ body.leaving .view{animation:viewOut .22s ease-in both}
 .i-pulse{--g1:#b6ff3b;--g2:#00b86b}
 .i-theater{--g1:#ffd36e;--g2:#ff5a36}
 .i-ambient{--g1:#2a3d66;--g2:#0b1022}
+.i-web{--g1:#62d2ff;--g2:#1a5cff}
+.theme-web{--accent:#4aa8ff}
+body.theme-web #wall{--w1:#1a5cff;--w2:#62d2ff;--w3:#0b2a6b}
+.urlbar{display:flex;align-items:center;gap:.8rem;margin:1.5rem 4.5rem 2.4rem;height:4.4rem;padding:0 .6rem 0 1.6rem;border-radius:1.4rem;font-size:1.25rem}
+.urlbar svg{width:1.4rem;height:1.4rem;opacity:.6;flex:none}
+.urlbar input{flex:1;height:100%;font-size:1.2rem;user-select:text;min-width:0}
+.urlbar input::placeholder{color:var(--faint)}
+.urlbar button{height:3.2rem;padding:0 1.6rem;border-radius:1rem;background:var(--accent);color:#000;font-weight:700;font-size:1rem;transition:transform .3s var(--spring)}
+.urlbar button:hover{transform:scale(1.05)}
+.recent{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem;margin:0 4.5rem 2.4rem}
+.rcard{display:flex;align-items:center;gap:1.1rem;padding:1.2rem 1.3rem;border-radius:1.2rem;text-align:left;min-width:0;transition:transform .4s var(--spring),box-shadow .4s}
+.rcard:hover{transform:scale(1.04);box-shadow:0 1.4rem 2.6rem rgba(0,0,0,.5),0 0 0 .14rem rgba(255,255,255,.85)}
+.rcard .fav{flex:none;width:3rem;height:3rem;border-radius:.8rem;background:rgba(255,255,255,.1);display:grid;place-items:center;overflow:hidden}
+.rcard .fav img{width:1.9rem;height:1.9rem}
+.rcard .tx{min-width:0}
+.rcard b{display:block;font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard small{display:block;font-size:.76rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.15rem}
+.rcard.ghost{opacity:.45;pointer-events:none}
+.tt-hero{position:relative;margin:0 4.5rem 2.2rem;border-radius:1.6rem;overflow:hidden;padding:2.4rem 2.6rem;display:flex;align-items:center;gap:2.4rem;
+  background:radial-gradient(60% 120% at 0% 0%,rgba(47,243,224,.35),transparent 60%),radial-gradient(60% 120% at 100% 100%,rgba(255,46,147,.35),transparent 60%),rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.tt-hero h2{font-size:2.2rem;font-weight:800;letter-spacing:-.035em;line-height:1.05;margin:.4rem 0 .5rem}
+.tt-hero p{font-size:.9rem;color:var(--dim);line-height:1.45;max-width:34rem}
+.tt-hero .acts{display:flex;gap:.8rem;margin-top:1.2rem}
 
 /* =====================================================================
    HOME
@@ -113,10 +136,15 @@ body.leaving .view{animation:viewOut .22s ease-in both}
 .dock .app{animation:dockIn .8s var(--spring) both}
 @keyframes dockIn{from{opacity:0;transform:translateY(2.5rem) scale(.8)}}
 
-.continue{position:absolute;left:4.5rem;right:4.5rem;bottom:2rem}
+.continue{position:absolute;left:4.5rem;right:4.5rem;bottom:1.3rem}
+.continue .eyebrow{font-size:.68rem}
+.home.has-continue .shelf{height:50%}
+.home.has-continue .shelf .meta{bottom:3.4rem}
+.home.has-continue .shelf .dots{bottom:3.8rem}
+.home.has-continue .dock{top:49%}
 .continue .eyebrow{margin-bottom:.7rem}
 .mini-row{display:flex;gap:1rem;overflow-x:auto;scroll-behavior:smooth}
-.mini{flex:0 0 12.5rem;border-radius:.8rem;overflow:hidden;position:relative;aspect-ratio:16/9;transition:transform .4s var(--spring);background:#111}
+.mini{flex:0 0 8.6rem;border-radius:.8rem;overflow:hidden;position:relative;aspect-ratio:16/9;transition:transform .4s var(--spring);background:#111}
 .mini:hover{transform:scale(1.07)}
 .mini img{width:100%;height:100%;object-fit:cover}
 .mini span{position:absolute;left:.6rem;right:.6rem;bottom:.45rem;font-size:.72rem;font-weight:600;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 6px #000}
@@ -408,6 +436,7 @@ const ICON = {
   live: '<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"><circle cx="24" cy="24" r="4.2" fill="#fff" stroke="none"/><path d="M16.5 16.5a10.6 10.6 0 0 0 0 15M31.5 16.5a10.6 10.6 0 0 1 0 15"/><path d="M11 11a18.4 18.4 0 0 0 0 26M37 11a18.4 18.4 0 0 1 0 26" stroke-opacity=".6"/></svg>',
   pulse: '<svg viewBox="0 0 48 48" fill="none"><path d="M5 26h8l4-10 7 20 5-14 3 4h11" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   theater: '<svg viewBox="0 0 48 48" fill="none"><path d="M8 15a3 3 0 0 1 3-3h26a3 3 0 0 1 3 3v4a5 5 0 0 0 0 10v4a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3v-4a5 5 0 0 0 0-10z" fill="#fff"/><path d="M24 18.5l1.7 3.5 3.8.5-2.8 2.6.7 3.8-3.4-1.8-3.4 1.8.7-3.8-2.8-2.6 3.8-.5z" fill="#ff7a3c"/></svg>',
+  web: '<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="3.2"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c5 4.5 7 10 7 16s-2 11.5-7 16c-5-4.5-7-10-7-16s2-11.5 7-16z" stroke-linejoin="round"/></svg>',
   ambient: '<svg viewBox="0 0 48 48" fill="none"><path d="M30 9a15 15 0 1 0 9 26.8A16 16 0 0 1 30 9z" fill="#fff"/><circle cx="36" cy="13" r="1.8" fill="#fff"/><circle cx="40.5" cy="21" r="1.2" fill="#fff" fill-opacity=".7"/></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.6-4.6"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>',
@@ -424,6 +453,7 @@ const APPS = [
   { id: "live",    name: "Live",    cls: "i-live" },
   { id: "pulse",   name: "Pulse",   cls: "i-pulse" },
   { id: "theater", name: "Theater", cls: "i-theater" },
+  { id: "web",     name: "Browser", cls: "i-web" },
   { id: "ambient", name: "Ambient", cls: "i-ambient" }
 ];
 const iconHTML = (a) => `<div class="icon ${a.cls}">${ICON[a.id]}</div>`;
@@ -556,7 +586,7 @@ function renderHome() {
     <div class="continue"><div class="eyebrow">Up Next</div><div class="mini-row">
       ${hist.slice(0, 7).map(h => `<button class="mini" data-go='${attr(h.go)}'>${h.thumb ? `<img src="${esc(h.thumb)}" onerror="${imgFail}">` : ""}<span>${esc(h.title)}</span></button>`).join("")}
     </div></div>` : "";
-  $("#app").innerHTML = view("home", `
+  $("#app").innerHTML = view("home" + (hist.length ? " has-continue" : ""), `
     <div class="shelf">${slides}<div class="shade"></div>
       <div class="meta"><div class="eyebrow" id="shEy"></div><h1 id="shT"></h1><p id="shS"></p>
         <button class="pill primary" id="shGo">${ICON.play}Play</button></div>
@@ -639,7 +669,13 @@ function renderLoopsBrowse() {
   const ids = loopIds();
   $("#app").innerHTML = view("appview theme-loops", `
     ${appbar(a, "Search TikTok or paste a link")}
-    <div class="row"><h3>For You</h3><div class="track" id="ltrack">
+    <div class="tt-hero"><div>
+      <div class="eyebrow">TikTok on the big screen</div>
+      <h2>Your For You feed</h2>
+      <p>Opens TikTok itself on the TV so you can scroll the real feed. Sign in to see your own For You page \u2014 your sign-in stays in your viewer only. Everyone nearby watches along.</p>
+      <div class="acts"><button class="pill primary" data-open="https://www.tiktok.com/foryou">${ICON.play}Open For You</button><button class="pill glass" data-open="https://www.tiktok.com/login">Sign in to TikTok</button></div>
+    </div></div>
+    <div class="row"><h3>Saved Loops</h3><div class="track" id="ltrack">
       ${ids.map(id => `<button class="card tall" data-go='${attr({ app: "loops", id })}'><div class="thumb"><div class="art" style="--g1:#0fd3c0;--g2:#6a1bd1">${ICON.loops.replace("<svg", '<svg style="width:40%"')}</div><img data-tt="${id}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s"></div><div class="t" data-ttt="${id}">Loop</div><div class="s" data-tta="${id}">&nbsp;</div></button>`).join("")}
     </div></div>
     <div class="empty glass"><b>Add your own:</b> paste any TikTok link above (the full <b>tiktok.com/@user/video/…</b> link works best). Short <b>vm.tiktok.com</b> links have to be opened in a browser first to get the full link. Owners can also pin favourites in the CONFIG block.</div>
@@ -655,7 +691,8 @@ function renderLoopsPlayer(id) {
   const ids = loopIds(); if (!ids.includes(id)) ids.unshift(id);
   const i = ids.indexOf(id);
   const prev = ids[(i - 1 + ids.length) % ids.length], next = ids[(i + 1) % ids.length];
-  const src = `https://www.tiktok.com/player/v1/${id}?autoplay=1&loop=1&music_info=1&description=1&rel=0&controls=1`;
+  const many = ids.length > 1;   // with several saved loops, play them one after another
+  const src = `https://www.tiktok.com/player/v1/${id}?autoplay=1&loop=${many ? 0 : 1}&music_info=1&description=1&rel=0&controls=1`;
   $("#app").innerHTML = view("player theme-loops", `
     <div class="loops-player">
       <div class="bg fallback" id="lbg"></div>
@@ -669,6 +706,10 @@ function renderLoopsPlayer(id) {
     </div>
     <div class="catcher"></div>
     <div class="hud top"><button class="pill glass round" data-go='${attr({ app: "loops" })}' title="Back">${ICON.back}</button><span class="pill glass together" title="Everyone nearby sees this"><i></i><span class="lbl">Watching together</span></span></div>`);
+  if (many) window.addEventListener("message", ev => {
+    let d = ev.data; if (typeof d === "string") { try { d = JSON.parse(d); } catch (x) { return; } }
+    if (d && d["x-tiktok-player"] && d.type === "onStateChange" && d.value === 0) { SFX.swipe(false); go({ app: "loops", id: next }); }
+  });
   document.addEventListener("keydown", e => { if (e.key === "ArrowUp") { SFX.swipe(true); go({ app: "loops", id: prev }); } if (e.key === "ArrowDown") { SFX.swipe(false); go({ app: "loops", id: next }); } });
   ttMeta(id).then(m => {
     const it = { app: "loops", id, title: (m && m.title) || "Loop", sub: m && m.author ? "@" + m.author : "Loops", thumb: m && m.thumb, go: { app: "loops", id } };
@@ -765,6 +806,52 @@ async function renderTubeSearch(q) {
   }
 }
 
+/* ---------- BROWSER ---------- */
+const WEB_SHORTCUTS = [
+  { name: "Google", url: "https://www.google.com" },
+  { name: "YouTube", url: "https://www.youtube.com" },
+  { name: "TikTok", url: "https://www.tiktok.com/foryou" },
+  { name: "Twitch", url: "https://www.twitch.tv" },
+  { name: "Wikipedia", url: "https://www.wikipedia.org" },
+  { name: "Pluto TV", url: "https://pluto.tv/live-tv" }
+];
+function webUrl(raw) {
+  raw = (raw || "").trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (!/\s/.test(raw) && /^[^\s]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) return "https://" + raw;
+  return "https://www.google.com/search?q=" + encodeURIComponent(raw);   // words = search
+}
+const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return u; } };
+function rememberWeb(u) {
+  const list = store.get("web", []).filter(x => x !== u);
+  list.unshift(u); store.set("web", list.slice(0, 3));
+}
+function openWeb(raw, quiet) {
+  const u = webUrl(raw); if (!u) return;
+  rememberWeb(u);
+  if (!quiet) toast("Opening " + hostOf(u) + " for everyone\u2026");
+  document.body.classList.add("leaving");
+  setTimeout(() => location.assign(u), quiet ? 150 : 650);
+}
+const favImg = u => `<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostOf(u))}&sz=64" alt="" onerror="${imgFail}">`;
+function renderWeb() {
+  const a = APPS.find(x => x.id === "web");
+  const rec = store.get("web", []);
+  const recent = [0, 1, 2].map(i => rec[i]
+    ? `<button class="rcard glass" data-open="${esc(rec[i])}"><div class="fav">${favImg(rec[i])}</div><div class="tx"><b>${esc(hostOf(rec[i]))}</b><small>${esc(rec[i])}</small></div></button>`
+    : `<div class="rcard glass ghost"><div class="fav"></div><div class="tx"><b>Empty</b><small>Links you open show up here</small></div></div>`).join("");
+  $("#app").innerHTML = view("appview theme-web", `
+    ${appbar(a, "")}
+    <form class="urlbar glass" data-app="web">${ICON.search}<input placeholder="Type a web address, paste a link, or search" spellcheck="false" autocomplete="off"><button type="submit">Open</button></form>
+    <div class="row"><h3>Recent</h3></div><div class="recent">${recent}</div>
+    <div class="row"><h3>Shortcuts</h3></div>
+    <div class="recent">${WEB_SHORTCUTS.map(s => `<button class="rcard glass" data-open="${esc(s.url)}"><div class="fav">${favImg(s.url)}</div><div class="tx"><b>${esc(s.name)}</b><small>${esc(hostOf(s.url))}</small></div></button>`).join("")}</div>
+    <div class="note glass">${ICON.info}<div>The page opens on the whole TV, so everyone watching follows along. To come back, click the TV (not the screen) and pick <b style="color:#fff">Home</b>. If you sign in to a site, that sign-in only lives in <b style="color:#fff">your</b> viewer, not anyone else's.</div></div>
+  `);
+  setTimeout(() => { const i = $(".urlbar input"); if (i) i.focus(); }, 400);
+}
+
 /* ---------- THEATER ---------- */
 function renderTheater() {
   const a = APPS[4];
@@ -810,8 +897,10 @@ document.addEventListener("mouseover", e => {
 document.addEventListener("mousedown", () => SFX.unlock(), { passive: true });
 document.addEventListener("click", e => {
   if (e.target.closest("button,[data-go],[data-url]")) SFX.click();
+  const op = e.target.closest("[data-open]");
+  if (op) { openWeb(op.dataset.open); return; }
   const site = e.target.closest("[data-url]");
-  if (site) { toast("Opening " + site.querySelector("b").textContent + " for everyone…"); document.body.classList.add("leaving"); setTimeout(() => location.assign(site.dataset.url), 600); return; }
+  if (site) { rememberWeb(site.dataset.url); toast("Opening " + site.querySelector("b").textContent + " for everyone…"); document.body.classList.add("leaving"); setTimeout(() => location.assign(site.dataset.url), 600); return; }
   const el = e.target.closest("[data-go]");
   if (!el) return;
   let p = {}; try { p = JSON.parse(el.dataset.go || "{}"); } catch (err) {}
@@ -820,14 +909,14 @@ document.addEventListener("click", e => {
   go(p);
 });
 document.addEventListener("submit", e => {
-  const f = e.target.closest("form.search"); if (!f) return;
+  const f = e.target.closest("form.search, form.urlbar"); if (!f) return;
   e.preventDefault();
   const app = f.dataset.app, raw = $("input", f).value.trim();
   if (!raw) return;
   if (app === "tube") { const id = ytId(raw); id ? go({ app, v: id, at: now(), s: ytStart(raw) || "" }) : go({ app, find: raw }); }
   else if (app === "loops") { const id = ttId(raw); id ? go({ app, id }) : go({ app, find: raw }); }
   else if (app === "live" || app === "pulse") { const c = /twitch\.tv|kick\.com/.test(raw) ? chan(raw) : null; c ? go({ app, c }) : go({ app, find: raw }); }
-  else if (app === "theater") { const u = /^https?:\/\//i.test(raw) ? raw : "https://" + raw; toast("Opening for everyone…"); document.body.classList.add("leaving"); setTimeout(() => location.assign(u), 600); }
+  else if (app === "theater" || app === "web") openWeb(raw);
 });
 /* vertical mouse-wheel scrolls the horizontal rows */
 document.addEventListener("wheel", e => {
@@ -1008,6 +1097,10 @@ function route() {
   if (app === "theater") {
     if (q) { const u = /^https?:\/\//i.test(q) ? q : "https://" + q; return location.replace(u); }
     return renderTheater();
+  }
+  if (app === "web") {
+    if (q) return openWeb(q, true);
+    return renderWeb();
   }
   if (app === "ambient") return renderAmbient();
   return renderHome();
