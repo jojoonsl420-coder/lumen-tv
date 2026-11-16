@@ -201,7 +201,7 @@ body.theme-theater #wall{--w1:#ff9500;--w2:#ff3b30;--w3:#4a1d00}
    ===================================================================== */
 .player{background:#000}
 .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
-.hud{position:absolute;left:1.6rem;right:1.6rem;top:1.4rem;z-index:5;display:flex;align-items:center;gap:1rem;
+.hud{position:absolute;left:1.2rem;top:50%;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:.8rem;transform:translateY(-50%);
   transition:opacity .5s var(--ease),transform .5s var(--ease)}
 .hud .title{display:flex;flex-direction:column;min-width:0;padding:0 1.2rem;height:3.1rem;justify-content:center;border-radius:99rem}
 .hud .title b{font-size:.95rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34rem}
@@ -211,10 +211,18 @@ body.theme-theater #wall{--w1:#ff9500;--w2:#ff3b30;--w3:#4a1d00}
 .hud .round{width:3.1rem;padding:0;justify-content:center}
 /* darker glass over bright video */
 .player .hud .glass{background:rgba(18,18,22,.55)}
-body.idle .hud{opacity:0;transform:translateY(-1rem);pointer-events:none}
+body.idle .hud{opacity:0;transform:translate(-1.5rem,-50%);pointer-events:none}
+.hud.top{top:1.4rem;transform:none}
+body.idle .hud.top{transform:translateX(-1.5rem)}
+.hud .pill{gap:0;min-width:3.1rem;justify-content:center}
+.hud .pill:hover{gap:.55rem}
+.hud .lbl{max-width:0;overflow:hidden;white-space:nowrap;opacity:0;transition:max-width .45s var(--ease),opacity .3s}
+.hud .pill:hover .lbl{max-width:15rem;opacity:1}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.8rem 1.3rem;margin:0 4.5rem 3rem}
+.grid .card{width:100%}
 body.idle{cursor:none}
 /* the hud only sits over the top 6rem so the embedded player stays clickable */
-.player .catcher{position:absolute;left:0;right:0;top:0;height:6rem;z-index:4}
+.player .catcher{position:absolute;left:0;top:14%;bottom:24%;width:5.5rem;z-index:4}
 
 .live-layout{position:absolute;inset:0;display:flex}
 .live-layout .stage{position:relative;flex:1}
@@ -330,6 +338,7 @@ const CONFIG = {
   volume: 0.7,                  // 0.0 - 1.0 master volume for interface sounds
   hoverTicks: true,             // tiny tick when the pointer moves onto a tile
   syncPlayback: true,           // late joiners jump to the same moment of a video
+  youtubeApiKey: "",            // optional: shows YouTube search results inside lumen (see README)
 
   tube: {                       // YouTube content
     rows: [
@@ -518,7 +527,7 @@ const appbar = (a, placeholder, extra = "") => `
     <button class="pill glass" data-go='${attr({})}'>${ICON.back}Home</button>
     <div class="brand ${a.id === "loops" ? "loops-wordmark" : ""}">${iconHTML(a)}<span>${a.name}</span></div>
     <div class="spacer"></div>
-    ${placeholder ? `<form class="search glass" data-app="${a.id}">${ICON.search}<input placeholder="${esc(placeholder)}" spellcheck="false" autocomplete="off"><button type="submit">Play</button></form>` : ""}
+    ${placeholder ? `<form class="search glass" data-app="${a.id}">${ICON.search}<input placeholder="${esc(placeholder)}" spellcheck="false" autocomplete="off"><button type="submit">Go</button></form>` : ""}
     ${extra}
     <div class="clock">${fmtTime()}</div>
   </header>`;
@@ -592,7 +601,7 @@ function renderTubeBrowse() {
   const hero = rows[0]?.items[0];
   const hist = store.get("history", []).filter(h => h.app === "tube");
   $("#app").innerHTML = view("appview theme-tube", `
-    ${appbar(a, "Paste a YouTube link or video ID")}
+    ${appbar(a, "Search YouTube or paste a link")}
     ${hero ? `<div class="hero" data-go='${attr({ app: "tube", v: hero.id })}'>
       <div class="art" style="--g1:#ff375f;--g2:#3a0618"></div>
       <img src="${ytThumb(hero.id, true)}" onerror="${imgHiFail(hero.id)}" onload="${imgHiLoad(hero.id)}"><div class="shade"></div>
@@ -612,11 +621,10 @@ function renderTubePlayer(id) {
     <iframe src="${src}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
     <div class="catcher"></div>
     <div class="hud">
-      <button class="pill glass round" data-go='${attr({ app: "tube" })}'>${ICON.back}</button>
-      <div class="title glass"><b id="pt">${esc(known.title || "Now Playing")}</b><small id="ps">${esc(known.sub || "Tube")}</small></div>
-      <div class="spacer"></div>
-      <span class="pill glass together"><i></i>Watching together</span>
-      <button class="pill glass" data-go='${attr({ app: "tube", v: id, at: now() })}' data-fresh="at">${ICON.restart}Restart for everyone</button>
+      <button class="pill glass round" data-go='${attr({ app: "tube" })}' title="Back">${ICON.back}</button>
+      <span class="pill glass together" title="Everyone nearby sees this"><i></i><span class="lbl">Watching together</span></span>
+      <button class="pill glass" data-go='${attr({ app: "tube", v: id, at: now() })}' data-fresh="at" title="Restart for everyone">${ICON.restart}<span class="lbl">Restart for everyone</span></button>
+      <div hidden><b id="pt"></b><small id="ps"></small></div>
     </div>`);
   const save = (t, s) => remember({ app: "tube", id, title: t, sub: s, thumb: ytThumb(id), go: { app: "tube", v: id } });
   if (known.title) save(known.title, known.sub);
@@ -630,7 +638,7 @@ function renderLoopsBrowse() {
   const a = APPS[1];
   const ids = loopIds();
   $("#app").innerHTML = view("appview theme-loops", `
-    ${appbar(a, "Paste a TikTok video link")}
+    ${appbar(a, "Search TikTok or paste a link")}
     <div class="row"><h3>For You</h3><div class="track" id="ltrack">
       ${ids.map(id => `<button class="card tall" data-go='${attr({ app: "loops", id })}'><div class="thumb"><div class="art" style="--g1:#0fd3c0;--g2:#6a1bd1">${ICON.loops.replace("<svg", '<svg style="width:40%"')}</div><img data-tt="${id}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s"></div><div class="t" data-ttt="${id}">Loop</div><div class="s" data-tta="${id}">&nbsp;</div></button>`).join("")}
     </div></div>
@@ -660,7 +668,7 @@ function renderLoopsPlayer(id) {
       </div>
     </div>
     <div class="catcher"></div>
-    <div class="hud"><button class="pill glass round" data-go='${attr({ app: "loops" })}'>${ICON.back}</button><div class="spacer"></div><span class="pill glass together"><i></i>Watching together</span></div>`);
+    <div class="hud top"><button class="pill glass round" data-go='${attr({ app: "loops" })}' title="Back">${ICON.back}</button><span class="pill glass together" title="Everyone nearby sees this"><i></i><span class="lbl">Watching together</span></span></div>`);
   document.addEventListener("keydown", e => { if (e.key === "ArrowUp") { SFX.swipe(true); go({ app: "loops", id: prev }); } if (e.key === "ArrowDown") { SFX.swipe(false); go({ app: "loops", id: next }); } });
   ttMeta(id).then(m => {
     const it = { app: "loops", id, title: (m && m.title) || "Loop", sub: m && m.author ? "@" + m.author : "Loops", thumb: m && m.thumb, go: { app: "loops", id } };
@@ -688,7 +696,7 @@ function renderChannelBrowse(app) {
   const recent = store.get("history", []).filter(h => h.app === app).map(h => ({ name: h.id, tag: "Recent" }));
   const hero = list[0];
   $("#app").innerHTML = view(`appview theme-${app}`, `
-    ${appbar(a, app === "live" ? "Type a Twitch channel name" : "Type a Kick channel name")}
+    ${appbar(a, app === "live" ? "Search Twitch or paste a channel link" : "Search Kick or paste a channel link")}
     ${hero ? `<div class="hero" data-go='${attr({ app, c: hero.name })}'>
       <div class="art" style="--g1:${app === "live" ? "#7c3aed" : "#00c853"};--g2:#07070a"></div>
       ${app === "live" ? `<img src="${twThumb(hero.name)}" onerror="${imgFail}">` : ""}<div class="shade"></div>
@@ -712,11 +720,9 @@ function renderChannelPlayer(app, c) {
     </div>
     <div class="catcher"></div>
     <div class="hud">
-      <button class="pill glass round" data-go='${attr({ app })}'>${ICON.back}</button>
-      <div class="title glass"><b>${esc(c)}</b><small>${isLive ? "Live" : "Pulse"} · streaming now</small></div>
-      <div class="spacer"></div>
-      <span class="pill glass together"><i></i>Watching together</span>
-      ${isLive ? `<button class="pill glass" id="chatBtn">${ICON.chat}Chat</button>` : ""}
+      <button class="pill glass round" data-go='${attr({ app })}' title="Back">${ICON.back}</button>
+      <span class="pill glass together" title="Everyone nearby sees this"><i></i><span class="lbl">Watching together</span></span>
+      ${isLive ? `<button class="pill glass" id="chatBtn" title="Chat">${ICON.chat}<span class="lbl">Chat</span></button>` : ""}
     </div>`);
   remember({ app, id: c, title: c, sub: isLive ? "Live" : "Pulse", thumb: isLive ? twThumb(c) : "", go: { app, c } });
   const cb = $("#chatBtn");
@@ -725,6 +731,38 @@ function renderChannelPlayer(app, c) {
     if (on && !$(".chat iframe")) $(".chat").innerHTML = `<iframe src="${chat}"></iframe>`;
   };
   setupHudIdle();
+}
+
+/* ---------- SEARCH ---------- */
+const SEARCH_URL = {
+  tube: q => "https://www.youtube.com/results?search_query=" + encodeURIComponent(q),
+  loops: q => "https://www.tiktok.com/search?q=" + encodeURIComponent(q),
+  live: q => "https://www.twitch.tv/search?term=" + encodeURIComponent(q),
+  pulse: q => "https://kick.com/search?query=" + encodeURIComponent(q)
+};
+const decodeEnt = s => { const t = document.createElement("textarea"); t.innerHTML = s; return t.value; };
+function webSearch(app, q) {
+  const a = APPS.find(x => x.id === app);
+  $("#app").innerHTML = view(`appview theme-${app}`, `${appbar(a, "")}
+    <div class="empty glass" style="margin-top:5rem;text-align:center"><b>Searching “${esc(q)}”…</b><br>Opening ${a.name} search for everyone. To come back, click the TV (not the screen) and pick Home.</div>`);
+  setTimeout(() => location.replace(SEARCH_URL[app](q)), 1100);
+}
+async function renderTubeSearch(q) {
+  if (!CONFIG.youtubeApiKey) return webSearch("tube", q);
+  const a = APPS[0];
+  $("#app").innerHTML = view("appview theme-tube", `${appbar(a, "Search YouTube or paste a link")}
+    <div class="row"><h3>Results for “${esc(q)}”</h3></div><div class="grid" id="res"><div class="empty glass">Searching…</div></div>`);
+  $(".search input").value = q;
+  try {
+    const r = await fetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&maxResults=24&safeSearch=moderate&q=" + encodeURIComponent(q) + "&key=" + CONFIG.youtubeApiKey);
+    const j = await r.json();
+    if (!r.ok) throw new Error((j.error && j.error.message) || r.status);
+    const items = (j.items || []).filter(it => it.id && it.id.videoId).map(it => ({ id: it.id.videoId, title: decodeEnt(it.snippet.title), sub: decodeEnt(it.snippet.channelTitle) }));
+    $("#res").innerHTML = items.length ? items.map(tubeCard).join("") : `<div class="empty glass">No results for that one.</div>`;
+  } catch (err) {
+    $("#res").innerHTML = `<div class="empty glass">Search didn't work (${esc(err.message)}). Opening YouTube search instead…</div>`;
+    setTimeout(() => location.replace(SEARCH_URL.tube(q)), 1800);
+  }
 }
 
 /* ---------- THEATER ---------- */
@@ -786,9 +824,9 @@ document.addEventListener("submit", e => {
   e.preventDefault();
   const app = f.dataset.app, raw = $("input", f).value.trim();
   if (!raw) return;
-  if (app === "tube") { const id = ytId(raw); id ? go({ app, v: id, at: now(), s: ytStart(raw) || "" }) : toast("That doesn't look like a YouTube link.", 3200, true); }
-  else if (app === "loops") { const id = ttId(raw); id ? go({ app, id }) : toast(/vm\.tiktok|vt\.tiktok/.test(raw) ? "Short links can't be read here. Open it in a browser and paste the full link." : "That doesn't look like a TikTok video link.", 4200, true); }
-  else if (app === "live" || app === "pulse") { const c = chan(raw); c ? go({ app, c }) : toast("Channel names are letters, numbers and underscores.", 3200, true); }
+  if (app === "tube") { const id = ytId(raw); id ? go({ app, v: id, at: now(), s: ytStart(raw) || "" }) : go({ app, find: raw }); }
+  else if (app === "loops") { const id = ttId(raw); id ? go({ app, id }) : go({ app, find: raw }); }
+  else if (app === "live" || app === "pulse") { const c = /twitch\.tv|kick\.com/.test(raw) ? chan(raw) : null; c ? go({ app, c }) : go({ app, find: raw }); }
   else if (app === "theater") { const u = /^https?:\/\//i.test(raw) ? raw : "https://" + raw; toast("Opening for everyone…"); document.body.classList.add("leaving"); setTimeout(() => location.assign(u), 600); }
 });
 /* vertical mouse-wheel scrolls the horizontal rows */
@@ -951,15 +989,21 @@ function route() {
   document.body.className = app ? "theme-" + app : "";
   if (app === "tube") {
     const id = P.get("v") || ytId(q);
-    return id ? renderTubePlayer(id) : renderTubeBrowse();
+    if (id) return renderTubePlayer(id);
+    const f = P.get("find") || q;
+    return f ? renderTubeSearch(f) : renderTubeBrowse();
   }
   if (app === "loops") {
     const id = P.get("id") || ttId(q);
-    return id ? renderLoopsPlayer(id) : renderLoopsBrowse();
+    if (id) return renderLoopsPlayer(id);
+    const f = P.get("find") || q;
+    return f ? webSearch("loops", f) : renderLoopsBrowse();
   }
   if (app === "live" || app === "pulse") {
-    const c = P.get("c") || chan(q);
-    return c ? renderChannelPlayer(app, c) : renderChannelBrowse(app);
+    const c = P.get("c") || (/\s/.test(q) ? null : chan(q));
+    if (c) return renderChannelPlayer(app, c);
+    const f = P.get("find") || q;
+    return f ? webSearch(app, f) : renderChannelBrowse(app);
   }
   if (app === "theater") {
     if (q) { const u = /^https?:\/\//i.test(q) ? q : "https://" + q; return location.replace(u); }
