@@ -329,6 +329,18 @@ body.theme-theater #wall{--w1:#ff9500;--w2:#ff3b30;--w3:#4a1d00}
 .site::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.25),transparent 50%);mix-blend-mode:soft-light}
 .site:hover{transform:scale(1.06);box-shadow:0 1.6rem 3rem rgba(0,0,0,.55),0 0 0 .16rem #fff}
 .site b{display:block;font-size:1.45rem;font-weight:800;letter-spacing:-.035em}
+.site .stag{position:absolute;right:1rem;top:1rem;z-index:1;font-size:.6rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;padding:.28rem .55rem;border-radius:.45rem;background:rgba(0,0,0,.32)}
+.site .stag.ext{background:rgba(255,255,255,.2)}
+.sicon{width:2.3rem;aspect-ratio:1;border-radius:.6rem;display:grid;place-items:center;font-weight:900;font-size:1.2rem;letter-spacing:-.04em;
+  background:linear-gradient(140deg,var(--g1),var(--g2));box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 .4rem 1rem rgba(0,0,0,.35)}
+.player video{position:absolute;inset:0;width:100%;height:100%;background:#000;object-fit:contain}
+.grid>.empty{grid-column:1/-1;margin:0}
+.card .thumb img.pbg{position:absolute;inset:0;filter:blur(1rem) brightness(.6);transform:scale(1.3)}
+.card .thumb img.pfit{position:absolute;inset:0;object-fit:contain}
+.hero img.hbg{filter:blur(2.2rem) brightness(.55) saturate(1.2);transform:scale(1.25)}
+.hero img.hposter{left:auto;right:4.5rem;top:50%;bottom:auto;width:auto;height:78%;max-width:40%;object-fit:contain;transform:translateY(-50%);
+  border-radius:.9rem;box-shadow:0 1.6rem 3.5rem rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.12)}
+.empty .actions{margin-top:1rem;display:flex;gap:.6rem}
 .site small{position:absolute;left:1.4rem;right:1.4rem;bottom:1.1rem;font-size:.78rem;color:rgba(255,255,255,.8);line-height:1.35}
 .note{margin:0 4.5rem 3rem;padding:1.2rem 1.4rem;border-radius:1rem;font-size:.85rem;color:var(--dim);line-height:1.5;display:flex;gap:.9rem;align-items:flex-start}
 .note svg{flex:none;width:1.2rem;height:1.2rem;margin-top:.1rem}
@@ -494,7 +506,7 @@ body.booted .view{animation:homeIn 1.1s var(--ease) both}
    ===================================================================== */
 const CONFIG = {
   osName: "lumen",
-  version: "3.0",                // shown on the home screen; matches the folder name
+  version: "3.1",                // shown on the home screen; matches the folder name
   homeStyle: "rail",            // home screen layout: "dock" | "grid" | "rail"  (try ?home=grid in a browser)
   screensaverMinutes: 4,        // home screen idles into the ambient clock (0 = never)
   sounds: true,                 // interface sounds (power, clicks, app opening, hover ticks...)
@@ -601,16 +613,16 @@ const CONFIG = {
               "philza", "fanum", "plaqueboymax", "stableronaldo", "lacy", "clix", "bugha", "nickeh30", "esl_csgo", "valorant", "riotgames", "fortnite"]
   },
 
-  theater: {                    // full-screen streaming sites (opens the whole TV on that site)
-    sites: [
-      { name: "Pluto TV",        url: "https://pluto.tv/live-tv",                      note: "Free live channels",          g1: "#2b2bff", g2: "#a100ff" },
-      { name: "Internet Archive",url: "https://archive.org/details/feature_films",      note: "Public-domain movies",        g1: "#3a3a3a", g2: "#0d0d0d" },
-      { name: "Dailymotion",     url: "https://www.dailymotion.com",                   note: "Clips, news & sport",         g1: "#0d65ff", g2: "#002a7a" },
-      { name: "Vimeo",           url: "https://vimeo.com/watch",                        note: "Short films & staff picks",   g1: "#17d5ff", g2: "#0063a3" },
-      { name: "Plex Free",       url: "https://watch.plex.tv/live-tv",                 note: "Free movies & live TV",       g1: "#ffb400", g2: "#c25b00" },
-      { name: "Tubi",            url: "https://tubitv.com",                            note: "Free movies (some may not play)", g1: "#ff5a00", g2: "#7a1a00" },
-      { name: "NASA+",           url: "https://plus.nasa.gov",                          note: "Missions, launches, science", g1: "#0b3d91", g2: "#000c2a" },
-      { name: "Twitch",          url: "https://www.twitch.tv/directory",               note: "Full site directory",         g1: "#9146ff", g2: "#3b0a8f" }
+  theater: {                    // streaming services: most open as their own app inside lumen
+    apps: [
+      { id: "classics",    name: "Classics",    kind: "archive",     note: "Old movies, cartoons & TV",      g1: "#d4a62a", g2: "#3b2604" },
+      { id: "vimeo",       name: "Vimeo",       kind: "vimeo",       note: "Award-winning short films",      g1: "#17d5ff", g2: "#0063a3" },
+      { id: "nasa",        name: "NASA",        kind: "nasa",        note: "Launches, missions & space",     g1: "#2f6bff", g2: "#000c2a" },
+      { id: "dailymotion", name: "Dailymotion", kind: "dailymotion", note: "Clips, news & sport",            g1: "#0d65ff", g2: "#001a52" },
+      { id: "pluto",       name: "Pluto TV",    kind: "frame",       note: "Free live channels",             g1: "#2b2bff", g2: "#a100ff", url: "https://pluto.tv/live-tv" },
+      { id: "twitch",      name: "Twitch",      kind: "goto",        note: "Streams in the Live app",        g1: "#9146ff", g2: "#3b0a8f", go: { app: "live" } },
+      { id: "tubi",        name: "Tubi",        kind: "site",        note: "Free movies",                    g1: "#ff5a00", g2: "#7a1a00", url: "https://tubitv.com" },
+      { id: "plex",        name: "Plex Free",   kind: "site",        note: "Free movies & live TV",          g1: "#ffb400", g2: "#c25b00", url: "https://watch.plex.tv/live-tv" }
     ]
   }
 };
@@ -1296,14 +1308,196 @@ function renderWeb() {
   setTimeout(() => { const i = $(".urlbar input"); if (i) i.focus(); }, 400);
 }
 
-/* ---------- THEATER ---------- */
+/* ---------- THEATER: every streaming service opens as its own app inside lumen ---------- */
+const STREAM = id => CONFIG.theater.apps.find(x => x.id === id);
+async function cachedJSON(url, ttl = 600) {          // every screen is a page load, so remember answers for a few minutes
+  const k = "lumen.c." + url;
+  try { const c = JSON.parse(sessionStorage.getItem(k) || "null"); if (c && Date.now() - c.t < ttl * 1000) return c.d; } catch (e) {}
+  const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 9000);
+  try {
+    const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    try { sessionStorage.setItem(k, JSON.stringify({ t: Date.now(), d })); } catch (e) {}
+    return d;
+  } finally { clearTimeout(tm); }
+}
+const ARCHIVE_SKIP = /\b(sex|sexual|sexy|nud(e|es|ist|ity)|erotic\w*|molest\w*|strip(per|tease)|burlesque|exploitation|naked|lust|porn\w*|marihuana|reefer)\b/i;
+const ARCHIVE_SETS = "collection:(feature_films) OR collection:(Film_Noir) OR collection:(classic_cartoons) OR collection:(classic_tv)";
+const archQ = (q, rows = 30) => "https://archive.org/advancedsearch.php?q=" + encodeURIComponent(`(${q}) AND mediatype:(movies)`) +
+  "&fl%5B%5D=identifier&fl%5B%5D=title&fl%5B%5D=year&fl%5B%5D=creator&sort%5B%5D=downloads+desc&rows=" + rows + "&output=json";
+const PROVIDERS = {
+  archive: {                                   // Internet Archive: public-domain films, free to embed
+    search: "Search classic movies, cartoons & TV",
+    rows: [["Most watched", "collection:(feature_films)"], ["Comedy", "collection:(feature_films) AND subject:(comedy)"],
+           ["Film noir", "collection:(Film_Noir)"], ["Sci-fi & horror", "collection:(feature_films) AND subject:(\"science fiction\" OR horror)"],
+           ["Westerns", "collection:(feature_films) AND subject:(western)"], ["Cartoons", "collection:(classic_cartoons)"], ["Classic TV", "collection:(classic_tv)"]],
+    async list(q) {
+      const j = await cachedJSON(archQ(q));
+      return j.response.docs.filter(d => d.title && !ARCHIVE_SKIP.test(d.title)).map(d => ({ id: d.identifier, title: d.title,
+        sub: [d.year, Array.isArray(d.creator) ? d.creator[0] : d.creator].filter(Boolean).join(" · ") || "Internet Archive",
+        thumb: "https://archive.org/services/img/" + encodeURIComponent(d.identifier) }));
+    },
+    find(q) { return this.list(`(${q}) AND (${ARCHIVE_SETS})`); },
+    link(raw) { const m = String(raw).match(/archive\.org\/(?:details|embed)\/([^/?#\s]+)/); return m && m[1]; },
+    player: id => `<iframe src="https://archive.org/embed/${encodeURIComponent(id)}?autoplay=1" allow="autoplay; fullscreen" allowfullscreen></iframe>`,
+    site: id => "https://archive.org/details/" + encodeURIComponent(id),
+    poster: true,                              // small cover art: show it sharp on a blurred copy of itself
+    note: "Every film here is in the public domain, from the Internet Archive."
+  },
+  vimeo: {                                     // Vimeo's open channel feeds + its embeddable player
+    search: "Find a film here, or paste a Vimeo link",
+    rows: [["Staff Picks", "staffpicks"], ["Best of the year", "bestofstaffpicks"], ["Animation", "animation"],
+           ["Documentaries", "documentaryfilm"], ["Short films", "shortfilms"], ["Travel", "travel"]],
+    async list(ch) {
+      const j = await cachedJSON(`https://vimeo.com/api/v2/channel/${ch}/videos.json`);
+      return j.map(v => ({ id: String(v.id), title: v.title, sub: [v.user_name, fmtDur(v.duration)].filter(Boolean).join(" · "), thumb: v.thumbnail_large }));
+    },
+    async find(q) {
+      const all = (await Promise.all(this.rows.map(r => this.list(r[1]).catch(() => [])))).flat();
+      const w = q.toLowerCase().split(/\s+/).filter(Boolean), seen = new Set();
+      return all.filter(v => !seen.has(v.id) && seen.add(v.id) && w.every(x => (v.title + " " + v.sub).toLowerCase().includes(x)));
+    },
+    link(raw) { const m = String(raw).match(/vimeo\.com\/(?:[^?#]*\/)?(\d{5,})/); return m && m[1]; },
+    player: (id, start) => `<iframe src="https://player.vimeo.com/video/${id}?autoplay=1&dnt=1${start > 3 ? "#t=" + start + "s" : ""}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`,
+    site: id => "https://vimeo.com/" + id,
+    note: "Vimeo has no open search, so searching looks through the films on this page. Paste any <b>vimeo.com</b> link to play it here."
+  },
+  nasa: {                                      // NASA's public video library, played right here
+    search: "Search NASA videos",
+    rows: [["Launches", "rocket launch"], ["Artemis", "artemis"], ["Mars", "mars rover"], ["Space station", "international space station"],
+           ["Earth from space", "earth from space"], ["Telescopes", "webb telescope"]],
+    async list(q) {
+      const j = await cachedJSON(`https://images-api.nasa.gov/search?q=${encodeURIComponent(q)}&media_type=video&page_size=30`);
+      return j.collection.items.map(it => {
+        const d = (it.data || [])[0] || {}, img = (it.links || []).find(l => l.render === "image" || /\.(jpe?g|png)$/i.test(l.href));
+        return { id: d.nasa_id, title: d.title, sub: [d.center, (d.date_created || "").slice(0, 4)].filter(Boolean).join(" · ") || "NASA", thumb: img ? img.href.replace(/^http:/, "https:") : "" };
+      }).filter(x => x.id && x.title);
+    },
+    find(q) { return this.list(q); },
+    player: () => `<video id="nv" controls autoplay playsinline></video>`,
+    async after(id, start) {
+      try {
+        const j = await cachedJSON(`https://images-api.nasa.gov/asset/${encodeURIComponent(id)}`, 3600);
+        const mp4 = j.collection.items.map(i => i.href.replace(/^http:/, "https:")).filter(h => /\.mp4$/i.test(h));
+        const src = mp4.find(h => /~medium\.mp4$/i.test(h)) || mp4.find(h => /~large\.mp4$/i.test(h)) || mp4.find(h => /~orig\.mp4$/i.test(h)) || mp4[0];
+        const v = $("#nv"); if (!v) return;
+        if (!src) return toast("This NASA video has no playable file. Pick another one.", 4500, true);
+        v.addEventListener("loadedmetadata", () => { if (start > 3 && start < v.duration - 5) v.currentTime = start; }, { once: true });
+        v.src = src;
+        v.play().catch(() => { v.muted = true; v.play().catch(() => {}); toast("Click the video to turn the sound on"); });
+      } catch (e) { toast("NASA isn't answering right now. Try again in a moment.", 4500, true); }
+    },
+    site: id => "https://images.nasa.gov/details/" + encodeURIComponent(id)
+  },
+  dailymotion: {                               // Dailymotion's open API + its embeddable player
+    search: "Search Dailymotion or paste a link",
+    rows: [["Trending", ""], ["News", "news"], ["Sport", "sport"], ["Music", "music"], ["Gaming", "videogames"], ["Funny", "fun"]],
+    async list(ch, q) {
+      const j = await cachedJSON("https://api.dailymotion.com/videos?fields=id,title,owner.screenname,thumbnail_480_url,duration&family_filter=true&limit=30&" +
+        (q ? "search=" + encodeURIComponent(q) + "&sort=relevance" : "sort=trending" + (ch ? "&channel=" + ch : "")));
+      return (j.list || []).map(v => ({ id: v.id, title: v.title, sub: [v["owner.screenname"], fmtDur(v.duration)].filter(Boolean).join(" · "), thumb: v.thumbnail_480_url }));
+    },
+    find(q) { return this.list("", q); },
+    link(raw) { const m = String(raw).match(/dailymotion\.com\/video\/([a-z0-9]+)|dai\.ly\/([a-z0-9]+)/i); return m && (m[1] || m[2]); },
+    player: (id, start) => `<iframe src="https://geo.dailymotion.com/player.html?video=${id}&autoplay=1${start > 3 ? "&startTime=" + start : ""}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`,
+    site: id => "https://www.dailymotion.com/video/" + id
+  }
+};
+const streamIcon = sa => `<div class="sicon" style="--g1:${sa.g1};--g2:${sa.g2}">${esc(sa.name[0])}</div>`;
+const streamGo = (sa, it) => ({ app: "theater", s: sa.id, v: it.id, t: it.title, u: it.sub, i: it.thumb });
+const streamBar = (sa, placeholder) => `
+  <header class="appbar">
+    <button class="pill glass" data-go='${attr({ app: "theater" })}'>${ICON.back}Theater</button>
+    <div class="brand">${streamIcon(sa)}<span>${esc(sa.name)}</span></div>
+    <div class="spacer"></div>
+    ${placeholder ? `<form class="search glass" data-app="theater" data-s="${sa.id}">${ICON.search}<input placeholder="${esc(placeholder)}" spellcheck="false" autocomplete="off"><button type="submit">Go</button></form>` : ""}
+    <div class="clock">${fmtTime()}</div>
+  </header>`;
+function streamCard(sa, it) {
+  return `<button class="card" data-go='${attr(streamGo(sa, it))}'>
+    <div class="thumb"><div class="art" style="--g1:${sa.g1};--g2:${sa.g2}">${esc((it.title || "?").trim()[0] || "?")}</div>
+      ${!it.thumb ? "" : (PROVIDERS[sa.kind] || {}).poster
+        ? `<img class="pbg" src="${esc(it.thumb)}" alt="" loading="lazy" onerror="${imgFail}"><img class="pfit" src="${esc(it.thumb)}" alt="" loading="lazy" onerror="${imgFail}">`
+        : `<img src="${esc(it.thumb)}" alt="" loading="lazy" onerror="${imgFail}" style="position:absolute;inset:0">`}</div>
+    <div class="t">${esc(it.title)}</div><div class="s">${esc(it.sub || "")}</div></button>`;
+}
+const streamHist = sa => store.get("history", []).filter(h => h.app === "theater" && h.go && h.go.s === sa.id && h.go.v);
+function renderStreamBrowse(sa) {
+  const pv = PROVIDERS[sa.kind], hist = streamHist(sa);
+  $("#app").innerHTML = view("appview theme-theater", `${streamBar(sa, pv.search)}
+    <div class="hero" id="shero"><div class="art" style="--g1:${sa.g1};--g2:${sa.g2}"></div><div class="shade"></div>
+      <div class="meta"><div class="eyebrow">${esc(sa.note || "")}</div><h2>${esc(sa.name)}</h2></div></div>
+    ${hist.length ? `<div class="row"><h3>Continue watching</h3><div class="track">${hist.map(h => streamCard(sa, { id: h.id, title: h.title, sub: h.sub, thumb: h.thumb })).join("")}</div></div>` : ""}
+    ${pv.rows.map((r, i) => `<div class="row"><h3>${esc(r[0])}</h3><div class="track" id="sr${i}"><div class="empty glass">Loading…</div></div></div>`).join("")}
+    ${pv.note ? `<div class="note glass">${ICON.info}<div>${pv.note}</div></div>` : ""}`);
+  pv.rows.forEach((r, i) => pv.list(r[1]).then(items => {
+    const el = $("#sr" + i); if (!el) return;
+    el.innerHTML = items.length ? items.map(it => streamCard(sa, it)).join("") : `<div class="empty glass">Nothing here right now.</div>`;
+    if (i === 0 && items[0]) {
+      const h = $("#shero"), it = items[0];
+      h.dataset.go = JSON.stringify(streamGo(sa, it));
+      h.innerHTML = `<div class="art" style="--g1:${sa.g1};--g2:${sa.g2}"></div>${!it.thumb ? "" : pv.poster
+          ? `<img class="hbg" src="${esc(it.thumb)}" alt="" onerror="${imgFail}"><img class="hposter" src="${esc(it.thumb)}" alt="" onerror="${imgFail}">`
+          : `<img src="${esc(it.thumb)}" alt="" onerror="${imgFail}">`}<div class="shade"></div>
+        <div class="meta"><div class="eyebrow">${esc(sa.name)} · Featured</div><h2>${esc(it.title)}</h2><button class="pill primary">${ICON.play}Watch together</button></div>`;
+    }
+  }).catch(() => { const el = $("#sr" + i); if (el) el.innerHTML = `<div class="empty glass">${esc(sa.name)} didn't answer for this row. Try again in a moment.</div>`; }));
+}
+async function renderStreamSearch(sa, q) {
+  const pv = PROVIDERS[sa.kind];
+  $("#app").innerHTML = view("appview theme-theater", `${streamBar(sa, pv.search)}
+    <div class="row"><h3>Results for “${esc(q)}”</h3></div><div class="grid" id="res"><div class="empty glass">Searching ${esc(sa.name)}…</div></div>`);
+  $(".search input").value = q;
+  try {
+    const items = await pv.find(q.replace(/[():"\\[\]{}^~*?!\/]/g, " ").replace(/\s+/g, " ").trim());
+    $("#res").innerHTML = items.length ? items.slice(0, 40).map(it => streamCard(sa, it)).join("")
+      : `<div class="empty glass">Nothing found for “${esc(q)}”.${pv.note ? " " + pv.note : ""}</div>`;
+  } catch (e) {
+    $("#res").innerHTML = `<div class="empty glass">${esc(sa.name)} isn't answering right now.
+      <div class="actions"><button class="pill primary" data-go='${attr({ app: "theater", s: sa.id, find: q, r: now() })}'>Try again</button></div></div>`;
+  }
+}
+function renderStreamPlayer(sa, id) {
+  const pv = PROVIDERS[sa.kind];
+  const at = +P.get("at") || 0, start = CONFIG.syncPlayback && at ? Math.max(0, now() - at) : 0;
+  const it = { id, title: P.get("t") || sa.name, sub: P.get("u") || sa.name, thumb: P.get("i") || "" };
+  $("#app").innerHTML = view("player theme-theater", `${pv.player(id, start)}
+    <div class="catcher"></div>
+    <div class="hud">
+      <button class="pill glass round" data-go='${attr({ app: "theater", s: sa.id })}' title="Back">${ICON.back}</button>
+      <span class="pill glass together" title="Everyone nearby sees this"><i></i><span class="lbl">Watching together</span></span>
+      <button class="pill glass" data-go='${attr(streamGo(sa, it))}' data-fresh="at" title="Restart for everyone">${ICON.restart}<span class="lbl">Restart for everyone</span></button>
+      ${pv.site ? `<button class="pill glass" data-open="${esc(pv.site(id))}" title="Not playing? Open it on ${esc(sa.name)}'s own site">${ICON.web}<span class="lbl">Open on ${esc(sa.name)}</span></button>` : ""}
+    </div>`);
+  remember({ app: "theater", id, title: it.title, sub: sa.name + " · " + it.sub, thumb: it.thumb, go: streamGo(sa, it) });
+  if (pv.after) pv.after(id, start);
+  setupHudIdle();
+}
+function renderStreamFrame(sa) {                // services that only work as their own site, shown inside lumen
+  $("#app").innerHTML = view("player theme-theater", `<iframe src="${esc(sa.url)}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+    <div class="catcher"></div>
+    <div class="hud">
+      <button class="pill glass round" data-go='${attr({ app: "theater" })}' title="Back">${ICON.back}</button>
+      <span class="pill glass together" title="Everyone nearby opens it too"><i></i><span class="lbl">${esc(sa.name)} in lumen</span></span>
+      <button class="pill glass" data-open="${esc(sa.url)}" title="Open the full site">${ICON.web}<span class="lbl">Open full site</span></button>
+    </div>`);
+  setupHudIdle();
+}
 function renderTheater() {
-  const a = APPS[4];
+  const a = APPS.find(x => x.id === "theater");
+  const hist = store.get("history", []).filter(h => h.app === "theater" && h.go && STREAM(h.go.s)).slice(0, 12);
+  const tiles = CONFIG.theater.apps.map(sa => {
+    const go = sa.kind === "goto" ? sa.go : sa.kind === "site" ? null : { app: "theater", s: sa.id };
+    const tag = sa.kind === "site" ? "Opens full site" : sa.kind === "goto" ? "Opens Live" : "App";
+    return `<button class="site" ${go ? `data-go='${attr(go)}'` : `data-url="${esc(sa.url)}"`} style="--g1:${sa.g1};--g2:${sa.g2}">
+      <span class="stag ${sa.kind === "site" ? "ext" : ""}">${tag}</span><b>${esc(sa.name)}</b><small>${esc(sa.note || "")}</small></button>`;
+  }).join("");
   $("#app").innerHTML = view("appview theme-theater", `
     ${appbar(a, "Open any web address")}
     <div class="row"><h3 style="margin-bottom:1.2rem">Streaming</h3></div>
-    <div class="sites">${CONFIG.theater.sites.map(s => `<button class="site" data-url="${esc(s.url)}" style="--g1:${s.g1};--g2:${s.g2}"><b>${esc(s.name)}</b><small>${esc(s.note || "")}</small></button>`).join("")}</div>
-    <div class="note glass">${ICON.info}<div>Theater opens the whole TV on that website, so everyone watching follows along. To come back, click the TV (not the screen) and pick <b style="color:#fff">Home</b>. Subscription services such as Netflix, Disney+, Max and Prime Video use copy protection that Second Life's built-in browser generally can't play, so they're not listed.</div></div>
+    <div class="sites">${tiles}</div>
+    ${hist.length ? `<div class="row"><h3>Continue watching</h3><div class="track">${hist.map(h => streamCard(STREAM(h.go.s), { id: h.id, title: h.title, sub: h.sub, thumb: h.thumb })).join("")}</div></div>` : ""}
+    <div class="note glass">${ICON.info}<div>Each service opens as its own app right here, and everyone watching follows along. <b style="color:#fff">Tubi</b> and <b style="color:#fff">Plex</b> don't allow being shown inside another page, so those open their full website; to come back, click the TV (not the screen) and pick <b style="color:#fff">Home</b>. Subscription services such as Netflix, Disney+, Max and Prime Video use copy protection that Second Life's built-in browser can't play, so they're not listed.</div></div>
   `);
 }
 
@@ -1349,7 +1543,7 @@ document.addEventListener("click", e => {
   if (!el) return;
   let p = {}; try { p = JSON.parse(el.dataset.go || "{}"); } catch (err) {}
   if (el.dataset.fresh === "at") p.at = now();
-  if (CONFIG.syncPlayback && (p.app === "tube" && p.v || p.app === "music" && (p.v || p.st)) && !p.at) p.at = now();
+  if (CONFIG.syncPlayback && (p.app === "tube" && p.v || p.app === "music" && (p.v || p.st) || p.app === "theater" && p.v) && !p.at) p.at = now();
   go(p);
 });
 document.addEventListener("submit", e => {
@@ -1361,6 +1555,10 @@ document.addEventListener("submit", e => {
   else if (app === "music") { const id = ytId(raw); id ? go({ app, v: id }) : go({ app, find: raw }); }
   else if (app === "loops") { const id = ttId(raw); id ? go({ app, id }) : toast("Paste a full TikTok video link to add it to the feed"); }
   else if (app === "live") { const c = /twitch\.tv|kick\.com/.test(raw) ? chan(raw) : null; c ? go({ app, c }) : go({ app, find: raw }); }
+  else if (app === "theater" && f.dataset.s) {
+    const sa = STREAM(f.dataset.s), pv = PROVIDERS[sa.kind], id = pv.link && pv.link(raw);
+    id ? go({ app, s: sa.id, v: id, at: now() }) : go({ app, s: sa.id, find: raw });
+  }
   else if (app === "theater" || app === "web") openWeb(raw);
 });
 /* mouse wheel: up/down always scrolls the page (even over a row of cards); sideways wheel or the ‹ › arrows move a row */
@@ -1591,6 +1789,14 @@ function route() {
   }
   if (app === "theater") {
     if (q) { const u = /^https?:\/\//i.test(q) ? q : "https://" + q; return location.replace(u); }
+    const sa = STREAM(P.get("s") || "");
+    if (sa && sa.kind === "frame") return renderStreamFrame(sa);
+    if (sa && sa.kind === "goto") return go(sa.go);
+    if (sa && PROVIDERS[sa.kind]) {
+      const v = P.get("v"); if (v) return renderStreamPlayer(sa, v);
+      const f = P.get("find"); if (f) return renderStreamSearch(sa, f);
+      return renderStreamBrowse(sa);
+    }
     return renderTheater();
   }
   if (app === "web") {
