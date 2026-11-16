@@ -480,6 +480,7 @@ const ytThumb = (id, hi) => `https://i.ytimg.com/vi/${id}/${hi ? "maxresdefault"
 const twThumb = (c) => `https://static-cdn.jtvnw.net/previews-ttv/live_user_${c}-640x360.jpg`;
 const imgFail = "this.style.display='none'";
 const imgHiFail = (id) => `if(!this.dataset.f){this.dataset.f=1;this.src='${ytThumb(id)}'}else{this.style.display='none'}`;
+const imgHiLoad = (id) => `if(this.naturalWidth<=120&&!this.dataset.f){this.dataset.f=1;this.src='${ytThumb(id)}'}`;
 
 function ytFind(id) {
   for (const r of CONFIG.tube.rows) for (const it of r.items) if (it.id === id) return it;
@@ -536,7 +537,7 @@ function renderHome() {
   const slides = items.map((it, i) => `
     <div class="slide ${i === 0 ? "on" : ""}">
       <div class="art" style="--g1:#1b2a6b;--g2:#3a0f5c"></div>
-      <img src="${it.img}" alt="" onerror="${it.id ? imgHiFail(it.id) : imgFail}">
+      <img src="${it.img}" alt="" onerror="${it.id ? imgHiFail(it.id) : imgFail}" onload="${it.id ? imgHiLoad(it.id) : ""}">
     </div>`).join("");
   const dock = APPS.map((a, i) => `
     <button class="app" data-go='${attr({ app: a.id })}' style="animation-delay:${.15 + i * .07}s">
@@ -594,7 +595,7 @@ function renderTubeBrowse() {
     ${appbar(a, "Paste a YouTube link or video ID")}
     ${hero ? `<div class="hero" data-go='${attr({ app: "tube", v: hero.id })}'>
       <div class="art" style="--g1:#ff375f;--g2:#3a0618"></div>
-      <img src="${ytThumb(hero.id, true)}" onerror="${imgHiFail(hero.id)}"><div class="shade"></div>
+      <img src="${ytThumb(hero.id, true)}" onerror="${imgHiFail(hero.id)}" onload="${imgHiLoad(hero.id)}"><div class="shade"></div>
       <div class="meta"><div class="eyebrow">Featured</div><h2>${esc(hero.title)}</h2>
       <button class="pill primary">${ICON.play}Watch together</button></div></div>` : ""}
     ${hist.length ? `<div class="row"><h3>Recently Played</h3><div class="track">${hist.map(h => tubeCard({ id: h.id, title: h.title, sub: h.sub })).join("")}</div></div>` : ""}
