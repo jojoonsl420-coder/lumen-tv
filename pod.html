@@ -114,6 +114,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--body);font-fam
 #toast{position:absolute;left:50%;top:62px;z-index:5;transform:translateX(-50%);padding:8px 16px;border-radius:12px;background:rgba(20,20,24,.85);color:#fff;
   font-size:20px;font-weight:600;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.on{opacity:1}
+/* nearby alert: drops down from the top of the screen */
+#near{position:absolute;left:12px;right:12px;top:8px;z-index:7;display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:18px;
+  background:rgba(22,22,26,.92);color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.45);transform:translateY(-140%);opacity:0;
+  transition:transform .45s cubic-bezier(.2,.9,.25,1.15),opacity .3s;pointer-events:none}
+#near.on{transform:translateY(0);opacity:1}
+#near .av{width:46px;height:46px;border-radius:50%;flex:0 0 46px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(140deg,var(--hi2),var(--hi));font-size:22px;font-weight:800}
+#near .tx{display:flex;flex-direction:column;min-width:0}
+#near b{font-size:21px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#near span{font-size:16px;color:rgba(255,255,255,.72)}
 #ytbox{position:absolute;left:33px;top:97px;width:170px;height:170px;border-radius:12px;overflow:hidden;opacity:0;pointer-events:none;z-index:4;transition:opacity .15s}
 #ytbox.on{opacity:1;pointer-events:auto;cursor:zoom-in}
 #ytbox #yt,#ytbox iframe{position:absolute;left:-66px;top:0;width:302px;height:170px;border:0}
@@ -152,6 +162,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--body);font-fam
     <div id="vol"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/></svg><div class="b"><i></i></div>
       <svg width="30" height="26" viewBox="0 0 28 24"><path d="M3 9h4l5-4v14l-5-4H3z M16 8a5 5 0 0 1 0 8 M19 5a9 9 0 0 1 0 14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>
     <div id="toast"></div>
+    <div id="near" role="status" aria-live="polite"><div class="av"></div><div class="tx"><b></b><span></span></div></div>
     <div id="dim"></div>
   </div></div>
   <div id="ytbox"><div id="yt"></div><div class="cap">Ad? Click <b>Skip</b> on the video · <b>MENU</b> to go back</div></div>
@@ -166,7 +177,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--body);font-fam
 <script>
 "use strict";
 /* ================= settings ================= */
-const VERSION = "1.5";
+const VERSION = "2.5";
 const SEARCH_SERVERS = ["https://api.piped.private.coffee", "https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de", "https://pipedapi.leptons.xyz", "https://pipedapi.reallyaweso.me"];
 const COLORS = {   // body = the prim colour of the Pod, so the page blends into the model
   Silver: { body: "#d6d9e0", sheen: "#eef0f4", w1: "#fbfbfc", w2: "#dcdde2", c1: "#e6e7eb", c2: "#c8c9cf", ink: "#8a8c94", hi: "#2f7cf6", hi2: "#5d9bff" },
@@ -204,7 +215,7 @@ const P = new URLSearchParams(location.search);
 const MODE = (P.get("mode") || "").toLowerCase();       // hud · worn · (none = in a normal browser)
 const thumb = id => "https://i.ytimg.com/vi/" + id + "/mqdefault.jpg";
 const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
-const S = Object.assign({ color: "Silver", screen: "Light", shuffle: false, repeat: "off", bright: "High", clicker: true, vol: 70, recent: [] },
+const S = Object.assign({ color: "Silver", screen: "Light", shuffle: false, repeat: "off", bright: "High", clicker: true, alerts: true, vol: 70, recent: [] },
   (() => { try { return JSON.parse(localStorage.getItem("lumenPod") || "{}"); } catch (e) { return {}; } })());
 const save = () => { try { localStorage.setItem("lumenPod", JSON.stringify(S)); } catch (e) {} };
 const colorKey = c => Object.keys(COLORS).find(k => k.toLowerCase() === String(c || "").toLowerCase());
@@ -272,7 +283,7 @@ function reportHash() {
   if (MODE === "worn") return;
   const np = cur ? cur.title + "|" + cur.sub : "";
   const k = colorKey(S.color), c = k ? k.toLowerCase() : (normHex(S.color) || "#d6d9e0").slice(1);
-  const body = "np=" + encodeURIComponent(np) + "&c=" + c;
+  const body = "np=" + encodeURIComponent(np) + "&c=" + c + "&al=" + (S.alerts ? 1 : 0);
   if (location.hash !== "#" + body) try { location.replace("#" + body); } catch (e) {}
   // and straight to the Pod's script over its private https line, so the hip Pod always follows
   if (CB && body !== lastSent) { lastSent = body; fetch(CB, { method: "POST", mode: "no-cors", body }).catch(() => { lastSent = ""; }); }
@@ -282,13 +293,17 @@ try { CB = localStorage.getItem("lumenPodCb") || ""; } catch (e) {}
 let repT = 0;   // while dragging round the colour wheel, only tell the Pod once you settle
 function reportSoon() { clearTimeout(repT); repT = setTimeout(reportHash, 500); }
 function readIn() {
-  const h = decodeURIComponent(location.hash.slice(1));
-  if (!h.startsWith("in:")) return;
-  for (const part of h.slice(3).split("&")) {
-    const [k, v] = part.split("=");
+  const raw = location.hash.slice(1);
+  if (!raw.startsWith("in:")) return;
+  const dec = x => { try { return decodeURIComponent(x || ""); } catch (e) { return x || ""; } };
+  const h = raw.slice(3);
+  for (const part of h.split("&")) {        // split first, then decode, so a name with & or = can't break it
+    const i = part.indexOf("="), k = i < 0 ? part : part.slice(0, i), v = i < 0 ? "" : dec(part.slice(i + 1));
     if (k === "u" && /^https:\/\/[a-z0-9.-]+\.secondlife\.io(:\d+)?\//i.test(v)) { CB = v; lastSent = ""; try { localStorage.setItem("lumenPodCb", v); } catch (e) {} reportHash(); }
     else if (k === "c") { setColor(v, false); const t = view(); if (t.type === "color") { colorSync(t); colorPaint(t); } else { if (t.refresh) t.refresh(); render(); } }
     else if (k === "pause" && yt && ytReady) yt.pauseVideo();
+    else if (k === "al") { S.alerts = v !== "0"; save(); const t = view(); if (t.refresh) { t.refresh(); render(); } }
+    else if (k === "near") { const d = (h.match(/(?:^|&)d=(\d+)/) || [])[1]; nearby(v, d); }
     else if (k === "play" && yt && ytReady) yt.playVideo();
   }
 }
@@ -305,6 +320,31 @@ function tick(big) {
     const s = AC.createBufferSource(), g = AC.createGain(); g.gain.value = big ? .35 : .22;
     s.buffer = b; s.connect(g); g.connect(AC.destination); s.start();
   } catch (e) {}
+}
+
+/* ================= nearby alert: someone walked into chat range ================= */
+let nearT = 0;
+function chime() {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const now = AC.currentTime;
+    [[1318.5, 0], [1975.5, 0.13]].forEach(([f, d]) => {          // two soft bell notes, E6 then B6
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0, now + d); g.gain.linearRampToValueAtTime(0.16, now + d + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0008, now + d + 0.9);
+      o.connect(g); g.connect(AC.destination); o.start(now + d); o.stop(now + d + 0.95);
+    });
+  } catch (e) {}
+}
+function nearby(who, d) {
+  if (MODE === "worn" || !S.alerts || !who) return;
+  const el = $("#near");
+  el.querySelector(".av").textContent = who.trim().charAt(0).toUpperCase();
+  el.querySelector("b").textContent = who + (/ and /.test(who) ? " are nearby" : " is nearby");
+  el.querySelector("span").textContent = (d ? d + " m away · " : "") + "in chat range";
+  el.classList.add("on"); chime();
+  clearTimeout(nearT); nearT = setTimeout(() => el.classList.remove("on"), 4200);
 }
 
 /* ================= player (YouTube, kept alive under every screen) ================= */
@@ -427,7 +467,8 @@ function settingsMenu() {
       { label: "Repeat", val: { off: "Off", one: "One", all: "All" }[S.repeat], act: () => { S.repeat = { off: "all", all: "one", one: "off" }[S.repeat]; save(); fill(); render(); }, stay: true },
       { label: "Brightness", val: S.bright, act: () => { S.bright = { High: "Low", Low: "Medium", Medium: "High" }[S.bright]; save(); bright(); fill(); render(); }, stay: true },
       { label: "Clicker", val: S.clicker ? "On" : "Off", act: () => { S.clicker = !S.clicker; save(); fill(); render(); }, stay: true },
-      { label: "About", val: "v" + VERSION, go: () => ({ type: "list", title: "About", sel: 0, items: [], empty: "lumen Pod " + VERSION + "<br><br>Turn the wheel to move, press the middle to pick, MENU to go back. Turn the wheel on Now Playing for volume.<br><br>Got an ad? Click the video (or press the middle twice on Now Playing) to make it big, then click YouTube\'s Skip button when it shows." }) }
+      { label: "Nearby Alerts", val: S.alerts ? "On" : "Off", act: () => { S.alerts = !S.alerts; save(); reportHash(); fill(); render(); }, stay: true },
+      { label: "About", val: "v" + VERSION, go: () => ({ type: "list", title: "About", sel: 0, items: [], empty: "lumen Pod " + VERSION + "<br><br>Turn the wheel to move, press the middle to pick, MENU to go back. Turn the wheel on Now Playing for volume.<br><br>When someone walks into chat range a banner drops down with a chime (Settings > Nearby Alerts).<br><br>Got an ad? Click the video (or press the middle twice on Now Playing) to make it big, then click YouTube\'s Skip button when it shows." }) }
     ];
   };
   v.refresh = fill; fill(); return v;
