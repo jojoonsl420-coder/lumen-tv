@@ -76,6 +76,34 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--body);font-fam
 .cw .cu.sel b{color:#fff}
 .cw .hint{position:absolute;left:254px;right:14px;bottom:12px;font-size:16px;line-height:1.3;color:#666}
 .cw .hint b{color:var(--hi)}
+/* dark screen (Settings > Screen) */
+#screen.dark{background:#0e0e11;color:#f2f2f5}
+#screen.dark #bar{background:linear-gradient(#2b2c31,#1b1c20);box-shadow:0 1px 0 #000;color:#f2f2f5}
+#screen.dark .v{background:#0e0e11}
+#screen.dark .row .val{color:#9a9ca6}
+#screen.dark .row.sel .val{color:#fff}
+#screen.dark .cw .s i{box-shadow:inset 0 0 0 2px rgba(255,255,255,.28),0 2px 5px rgba(0,0,0,.5)}
+#screen.dark .row .art{background-color:#2a2b30}
+#screen.dark .empty{color:#b5b7bf}
+#screen.dark .np .art{background-color:#2a2b30;box-shadow:0 10px 22px rgba(0,0,0,.6)}
+#screen.dark .np .cnt,#screen.dark .np .st{color:#8d8f98}
+#screen.dark .np .ar{color:#c9cbd2}
+#screen.dark .np .prog{background:#2d2e33;box-shadow:none}
+#screen.dark .np .tm{color:#a3a5ad}
+#screen.dark .kb .q{background:#1d1e22;box-shadow:inset 0 0 0 2px #34353b}
+#screen.dark .kb .q .ph{color:#6f717a}
+#screen.dark .kb .q svg path{stroke:#aaa}
+#screen.dark .kb .k{background:#25262b;color:#e8e9ee;box-shadow:0 2px 0 #000}
+#screen.dark .kb .k.sel{background:linear-gradient(var(--hi2),var(--hi));color:#fff}
+#screen.dark .kb .hint,#screen.dark .cw .hint{color:#8d8f98}
+#screen.dark .cw .wb{box-shadow:0 0 0 3px #0e0e11,0 0 0 4px #3a3b41,0 6px 16px rgba(0,0,0,.5)}
+#screen.dark .cw .wb.on{box-shadow:0 0 0 3px #0e0e11,0 0 0 6px var(--hi)}
+#screen.dark .cw .s span{color:#c9cbd2}
+#screen.dark .cw .s.sel{background:rgba(255,255,255,.07)}
+#screen.dark .cw .cu{background:#1d1e22;box-shadow:inset 0 0 0 1px #34353b}
+#screen.dark .cw .cu b{color:#9a9ca6}
+#screen.dark .cw .cu.sel{background:linear-gradient(var(--hi2),var(--hi));box-shadow:none}
+#screen.dark .cw .cu.sel b{color:#fff}
 /* overlays */
 #vol{position:absolute;left:30px;right:30px;bottom:18px;z-index:5;padding:14px 18px;border-radius:14px;background:rgba(20,20,24,.82);color:#fff;
   display:flex;align-items:center;gap:14px;opacity:0;transition:opacity .2s;pointer-events:none}
@@ -87,8 +115,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--body);font-fam
   font-size:20px;font-weight:600;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.on{opacity:1}
 #ytbox{position:absolute;left:33px;top:97px;width:170px;height:170px;border-radius:12px;overflow:hidden;opacity:0;pointer-events:none;z-index:4;transition:opacity .15s}
-#ytbox.on{opacity:1}
+#ytbox.on{opacity:1;pointer-events:auto;cursor:zoom-in}
 #ytbox #yt,#ytbox iframe{position:absolute;left:-66px;top:0;width:302px;height:170px;border:0}
+#ytbox::after{content:"";position:absolute;inset:0}                 /* small view: a click makes it big */
+#ytbox .cap{display:none}
+/* big video: the whole player, clickable, so YouTube's own "Skip Ad" button can be pressed */
+#ytbox.big{left:11px;top:75px;width:498px;height:325px;border-radius:0 0 16px 16px;background:#000;cursor:default}
+#ytbox.big::after{display:none}
+#ytbox.big #yt,#ytbox.big iframe{left:0;top:0;width:498px;height:280px}
+#ytbox.big .cap{display:block;position:absolute;left:0;right:0;bottom:0;height:45px;line-height:45px;text-align:center;white-space:nowrap;
+  font-size:17px;font-weight:600;color:#ddd;background:#111}
+#ytbox.big .cap b{color:#fff}
 /* the click wheel */
 #wheel{position:absolute;left:45px;top:460px;width:430px;height:430px;border-radius:50%;background:linear-gradient(160deg,var(--w1),var(--w2));
   box-shadow:inset 0 3px 10px rgba(0,0,0,.16),0 1px 0 rgba(255,255,255,.45);cursor:pointer;touch-action:none}
@@ -117,7 +154,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--body);font-fam
     <div id="toast"></div>
     <div id="dim"></div>
   </div></div>
-  <div id="ytbox"><div id="yt"></div></div>
+  <div id="ytbox"><div id="yt"></div><div class="cap">Ad? Click <b>Skip</b> on the video · <b>MENU</b> to go back</div></div>
   <div id="wheel">
     <div class="lab menu">MENU</div>
     <svg class="lab prev" width="48" height="34" viewBox="0 0 26 18"><path d="M12 2v14L3 9z M23 2v14l-9-7z" fill="currentColor"/></svg>
@@ -129,7 +166,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--body);font-fam
 <script>
 "use strict";
 /* ================= settings ================= */
-const VERSION = "1.2";
+const VERSION = "1.5";
 const SEARCH_SERVERS = ["https://api.piped.private.coffee", "https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de", "https://pipedapi.leptons.xyz", "https://pipedapi.reallyaweso.me"];
 const COLORS = {   // body = the prim colour of the Pod, so the page blends into the model
   Silver: { body: "#d6d9e0", sheen: "#eef0f4", w1: "#fbfbfc", w2: "#dcdde2", c1: "#e6e7eb", c2: "#c8c9cf", ink: "#8a8c94", hi: "#2f7cf6", hi2: "#5d9bff" },
@@ -167,7 +204,7 @@ const P = new URLSearchParams(location.search);
 const MODE = (P.get("mode") || "").toLowerCase();       // hud · worn · (none = in a normal browser)
 const thumb = id => "https://i.ytimg.com/vi/" + id + "/mqdefault.jpg";
 const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
-const S = Object.assign({ color: "Silver", shuffle: false, repeat: "off", bright: "High", clicker: true, vol: 70, recent: [] },
+const S = Object.assign({ color: "Silver", screen: "Light", shuffle: false, repeat: "off", bright: "High", clicker: true, vol: 70, recent: [] },
   (() => { try { return JSON.parse(localStorage.getItem("lumenPod") || "{}"); } catch (e) { return {}; } })());
 const save = () => { try { localStorage.setItem("lumenPod", JSON.stringify(S)); } catch (e) {} };
 const colorKey = c => Object.keys(COLORS).find(k => k.toLowerCase() === String(c || "").toLowerCase());
@@ -304,7 +341,9 @@ function start() {
   S.recent = [s, ...S.recent.filter(x => x.id !== s.id)].slice(0, 25); save();
   if (ytReady) yt.loadVideoById(s.id); else pendingId = s.id;
   reportHash(); drawBar(); if (view().type === "np") drawNP();
+  if (!tipShown && MODE !== "worn") { tipShown = true; setTimeout(() => toast("Got an ad? Click the video to make it big"), 2500); }
 }
+let tipShown = false;
 function next(auto, skipping) {
   if (!Q.list.length) return;
   if (auto && !skipping && S.repeat === "one") { yt.seekTo(0, true); yt.playVideo(); return; }
@@ -383,11 +422,12 @@ function settingsMenu() {
   const fill = () => {
     v.items = [
       { label: "Pod Colour", val: colorLabel(), go: colorView },
+      { label: "Screen", val: S.screen, act: () => { S.screen = S.screen === "Dark" ? "Light" : "Dark"; save(); screenMode(); fill(); render(); }, stay: true },
       { label: "Shuffle", val: S.shuffle ? "On" : "Off", act: () => { S.shuffle = !S.shuffle; save(); fill(); render(); }, stay: true },
       { label: "Repeat", val: { off: "Off", one: "One", all: "All" }[S.repeat], act: () => { S.repeat = { off: "all", all: "one", one: "off" }[S.repeat]; save(); fill(); render(); }, stay: true },
       { label: "Brightness", val: S.bright, act: () => { S.bright = { High: "Low", Low: "Medium", Medium: "High" }[S.bright]; save(); bright(); fill(); render(); }, stay: true },
       { label: "Clicker", val: S.clicker ? "On" : "Off", act: () => { S.clicker = !S.clicker; save(); fill(); render(); }, stay: true },
-      { label: "About", val: "v" + VERSION, go: () => ({ type: "list", title: "About", sel: 0, items: [], empty: "lumen Pod " + VERSION + "<br><br>Turn the wheel to move, press the middle to pick, MENU to go back. Turn the wheel on Now Playing for volume." }) }
+      { label: "About", val: "v" + VERSION, go: () => ({ type: "list", title: "About", sel: 0, items: [], empty: "lumen Pod " + VERSION + "<br><br>Turn the wheel to move, press the middle to pick, MENU to go back. Turn the wheel on Now Playing for volume.<br><br>Got an ad? Click the video (or press the middle twice on Now Playing) to make it big, then click YouTube\'s Skip button when it shows." }) }
     ];
   };
   v.refresh = fill; fill(); return v;
@@ -476,16 +516,17 @@ document.addEventListener("pointerdown", e => {
   const mv = ev => pick(ev), up = () => { removeEventListener("pointermove", mv); removeEventListener("pointerup", up); tick(); };
   addEventListener("pointermove", mv); addEventListener("pointerup", up);
 }, true);
+function screenMode() { $("#screen").classList.toggle("dark", S.screen === "Dark"); }
 function bright() { $("#dim").style.opacity = { High: 0, Medium: .22, Low: .45 }[S.bright] || 0; }
 
 /* ---- drawing ---- */
 function drawBar() {
   const t = view();
-  $("#title").textContent = t.type === "np" ? "Now Playing" : (t.title || "lumen");
+  $("#title").textContent = t.type === "np" ? (t.big ? "Video" : "Now Playing") : (t.title || "lumen");
   $("#barL").innerHTML = cur ? (playing
-    ? `<svg width="22" height="24" viewBox="0 0 10 12"><path d="M1 1v10l8-5z" fill="#2a2a2e"/></svg>`
-    : `<svg width="22" height="24" viewBox="0 0 10 12"><path d="M1 1h3v10H1z M6 1h3v10H6z" fill="#2a2a2e"/></svg>`) : "";
-  $("#barR").innerHTML = `<svg width="46" height="22" viewBox="0 0 46 22"><rect x="1" y="2" width="38" height="18" rx="4" fill="none" stroke="#2a2a2e" stroke-width="2"/><rect x="40" y="7" width="4" height="8" rx="1.5" fill="#2a2a2e"/><rect x="4" y="5" width="30" height="12" rx="2" fill="#3ec45a"/></svg>`;
+    ? `<svg width="22" height="24" viewBox="0 0 10 12"><path d="M1 1v10l8-5z" fill="currentColor"/></svg>`
+    : `<svg width="22" height="24" viewBox="0 0 10 12"><path d="M1 1h3v10H1z M6 1h3v10H6z" fill="currentColor"/></svg>`) : "";
+  $("#barR").innerHTML = `<svg width="46" height="22" viewBox="0 0 46 22"><rect x="1" y="2" width="38" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="40" y="7" width="4" height="8" rx="1.5" fill="currentColor"/><rect x="4" y="5" width="30" height="12" rx="2" fill="#3ec45a"/></svg>`;
 }
 function listHTML(v) {
   if (!v.items.length) return `<div class="empty">${v.empty || "Nothing here."}</div>`;
@@ -538,7 +579,14 @@ function render(dir) {
   drawBar(); ytShow(); if (v.type === "np") progress();
   if (v.type === "color") colorPaint(v);
 }
-function ytShow() { $("#ytbox").classList.toggle("on", view().type === "np" && !!cur && !anim && MODE !== "worn"); }
+function ytShow() {
+  const v = view(), on = v.type === "np" && !!cur && !anim && MODE !== "worn";
+  $("#ytbox").classList.toggle("on", on);
+  $("#ytbox").classList.toggle("big", on && !!v.big);
+  if (v.type === "np") $("#title").textContent = v.big ? "Video" : "Now Playing";
+}
+function bigVideo(on) { const v = view(); if (v.type !== "np") return; v.big = on; v.scrub = false; tick(true); ytShow(); }
+$("#ytbox").addEventListener("click", () => { if (!view().big) bigVideo(true); });
 function go(v) {
   if (typeof v === "function") v = v();
   if (v.type === "np" && view().type === "np") { render(); return; }
@@ -588,7 +636,11 @@ function select() {
     else if (k === "Search") return runSearch(v.q);
     else v.q += k.toLowerCase();
     render();
-  } else if (v.type === "np") { v.scrub = !v.scrub; drawNP(); }
+  } else if (v.type === "np") {
+    if (v.big) bigVideo(false);
+    else if (v.scrub) { v.scrub = false; drawNP(); if (cur) bigVideo(true); }
+    else { v.scrub = true; drawNP(); }
+  }
   else if (v.type === "color") colorSelect(v);
 }
 async function runSearch(q) {
@@ -603,7 +655,12 @@ async function runSearch(q) {
   if (view() === v) render();
 }
 function press(zone) {
-  if (zone === "menu") { tick(true); const v = view(); if (v.type === "color" && v.mode) { v.mode = null; colorPaint(v); } else back(); }
+  if (zone === "menu") {
+    tick(true); const v = view();
+    if (v.type === "color" && v.mode) { v.mode = null; colorPaint(v); }
+    else if (v.type === "np" && v.big) bigVideo(false);
+    else back();
+  }
   else if (zone === "next") { tick(true); next(false); }
   else if (zone === "prev") { tick(true); prev(); }
   else if (zone === "play") { tick(true); playPause(); }
@@ -693,7 +750,7 @@ function wornScreen() {
 
 /* ================= start ================= */
 setColor(P.get("c") && (colorKey(P.get("c")) || normHex(P.get("c"))) ? P.get("c") : S.color, false);
-bright();
+bright(); screenMode();
 if (MODE === "worn") wornScreen();
 else {
   stack.push(mainMenu()); render();
