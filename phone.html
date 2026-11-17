@@ -111,6 +111,33 @@ h3 small{font-size:13px;font-weight:500;color:var(--faint);margin-left:6px}
 @keyframes pulse{50%{opacity:.35}}
 /* ---------- home ---------- */
 .home .body{padding-top:6px}
+/* home music widget + drop-down */
+.hmw{border-radius:24px;background:rgba(255,255,255,.13);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);margin-bottom:22px;overflow:hidden;transition:background .2s}
+.hmw.open{background:rgba(20,20,26,.72)}
+.hm-row{display:flex;align-items:center;gap:12px;padding:12px 10px 12px 12px}
+.hm-row .art{width:50px;height:50px;border-radius:12px;background:#333 center/cover;flex:none;display:flex;align-items:center;justify-content:center}
+.hm-row .art.ph{background:linear-gradient(135deg,#ff4f7b,#8e44ff)}.hm-row .art.ph svg{width:26px;height:26px}
+.hm-row .tx{flex:1;min-width:0;text-align:left}
+.hm-row small{display:block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-row b{display:block;font-size:16px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.hm-row .ib{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.hm-row .ib svg{width:24px;height:24px}
+.hm-row .dd{background:rgba(255,255,255,.16)}.hm-row .dd svg{width:22px;height:22px;transition:transform .25s}
+.hm-row .dd.on svg{transform:rotate(180deg)}
+.hm-dd{max-height:430px;overflow-y:auto;padding:0 10px 12px;animation:hmIn .22s ease-out}
+@keyframes hmIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.hm-dd h4{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55);margin:12px 4px 6px}
+.hm-chips{display:flex;flex-wrap:wrap;gap:7px;padding:0 2px}
+.hm-chips button{padding:8px 13px;border-radius:18px;font-size:14px;font-weight:600;background:rgba(255,255,255,.12)}
+.hm-chips button.on{background:#fff;color:#000}
+.hm-s{display:flex;align-items:center;gap:11px;width:100%;padding:7px 6px;border-radius:12px;text-align:left}
+.hm-s.cur{background:rgba(255,255,255,.14)}
+.hm-s .th{width:40px;height:40px;border-radius:8px;background:#333 center/cover;flex:none}
+.hm-s .tx{flex:1;min-width:0}.hm-s b{display:block;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-s span{display:block;font-size:12.5px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hm-s .n{width:18px;text-align:center;font-size:13px;color:rgba(255,255,255,.5);flex:none}
+.hm-s.cur .n{color:#ff4f7b}
+.hm-more{display:block;width:100%;padding:11px;margin-top:8px;border-radius:14px;background:rgba(255,255,255,.1);font-size:14.5px;font-weight:600}
 .cw{display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:24px;background:rgba(255,255,255,.13);margin-bottom:26px;text-align:left;width:100%}
 .cw small{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.72)}
 .cw .row{display:flex;gap:13px;align-items:center;margin-top:8px}
@@ -306,7 +333,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
    phone's scripts: they send #in:… (battery, alerts, radar, buttons),
    the page posts back over the phone's private https line.
    ===================================================================== */
-const VERSION = "1.1";
+const VERSION = "1.2";
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -358,6 +385,7 @@ const WALLS = [["lumen", "lumen"], ["aurora", "Aurora"], ["sunset", "Sunset"], [
 /* ---------- icons (original line art) ---------- */
 const ic = (d, sw = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
 const I = {
+  ddown: "M6 9l6 6 6-6", eq: "M5 20V10 M10 20V4 M15 20v-7 M20 20V8",
   tube: "M8 6.5v11l9-5.5z", music: "M9 18V6l10-2v12 M9 18a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0z M19 16a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0z",
   live: "M12 10a2 2 0 1 0 0 4a2 2 0 1 0 0-4z M8 8a6 6 0 0 0 0 8 M16 8a6 6 0 0 1 0 8 M5 5a10 10 0 0 0 0 14 M19 5a10 10 0 0 1 0 14",
   movies: "M4 9h16v10H4z M4 9l3-4 M10 9l3-4 M16 9l3-4", theater: "M3 5h18v11H3z M8 20h8 M12 16v4",
@@ -568,10 +596,43 @@ SCR.home = () => {
   const c = S.cont;
   const cw = c ? `<button class="cw" data-act="cont"><small>Continue watching</small><div class="row"><div class="th" style="background-image:url('${thumb(c.id)}')"><i style="width:${c.dur ? Math.min(100, c.pos / c.dur * 100) : 0}%"></i></div>
      <div style="min-width:0"><b>${esc(c.title)}</b><span>${c.app === "movies" ? "Movies" : "Tube"}${c.dur ? " · " + Math.max(1, Math.round((c.dur - c.pos) / 60)) + " min left" : ""}</span></div></div></button>` : "";
-  return `<div class="scr home"><div class="body">${cw}
+  return `<div class="scr home"><div class="body">${musicW()}${cw}
     <div class="apps">${APPS.map(a => `<button class="app" data-go="${a.id}">${appIco(a)}<span>${a.name}</span></button>`).join("")}</div></div>
     <div class="dock">${["tube", "music", "movies", "web"].map(id => APPS.find(a => a.id === id)).map(a => `<button class="app" data-go="${a.id}" aria-label="${a.name}">${appIco(a)}</button>`).join("")}</div></div>`;
 };
+
+/* home music widget: what's playing, with a drop-down to change the song */
+let homeDD = false;
+function musicW() {
+  const open = homeDD;
+  const head = M.cur
+    ? `<div class="hm-row"><div class="art" style="background-image:url('${thumb(M.cur.id)}')"></div>
+        <div class="tx"><small>${M.playing ? "Now playing" : "Paused"} · ${esc(M.from || "TubeMusic")}</small><b>${esc(M.cur.title)}</b></div>
+        <button class="ib js-pp" data-act="mpp" aria-label="Play or pause">${ppIcon()}</button>
+        <button class="ib" data-act="mnext" aria-label="Next">${fillIc(I.next)}</button>
+        <button class="ib dd${open ? " on" : ""}" data-act="hmdd" aria-label="Change song">${ic(I.ddown, 2.6)}</button></div>`
+    : `<div class="hm-row"><div class="art ph">${ic(I.music)}</div>
+        <div class="tx"><small>TubeMusic</small><b>Pick something to play</b></div>
+        <button class="ib dd${open ? " on" : ""}" data-act="hmdd" aria-label="Pick music">${ic(I.ddown, 2.6)}</button></div>`;
+  if (!open) return `<div class="hmw">${head}</div>`;
+  let body = `<h4>Stations</h4><div class="hm-chips">${CFG.stations.map(st => `<button data-hst="${st.key}" class="${M.from === st.name ? "on" : ""}">${esc(st.name)}</button>`).join("")}</div>`;
+  if (M.list.length) {
+    body += `<h4>${M.list.length > 1 ? "Up next · tap a song" : "Playing"}</h4>` + M.list.map((x, i) => `<button class="hm-s${i === M.i ? " cur" : ""}" data-hq="${i}">
+      <span class="n">${i === M.i ? (M.playing ? ic(I.eq, 2.4).replace("<svg", '<svg width="16" height="16"') : "❚❚") : i + 1}</span>
+      <div class="th" style="background-image:url('${thumb(x.id)}')"></div><div class="tx"><b>${esc(x.title)}</b><span>${esc(x.sub || "")}</span></div></button>`).join("");
+  }
+  const rec = S.recentMusic.filter(x => !M.list.some(y => y.id === x.id)).slice(0, 5);
+  if (rec.length) body += `<h4>Recently played</h4>` + rec.map(x => `<button class="hm-s" data-hrec="${esc(x.id)}"><span class="n">${ic(I.music, 2).replace("<svg", '<svg width="15" height="15"')}</span>
+      <div class="th" style="background-image:url('${thumb(x.id)}')"></div><div class="tx"><b>${esc(x.title)}</b><span>${esc(x.sub || "")}</span></div></button>`).join("");
+  body += `<button class="hm-more" data-go="music">Search songs in TubeMusic</button>`;
+  return `<div class="hmw open">${head}<div class="hm-dd">${body}</div></div>`;
+}
+function hmRefresh() {            // redraw the widget in place, keeping the list's scroll
+  const w = $(".home .hmw"); if (!w) return;
+  const dd = w.querySelector(".hm-dd"), top = dd ? dd.scrollTop : 0;
+  w.outerHTML = musicW();
+  const nd = $(".home .hm-dd"); if (nd) { nd.style.animation = "none"; nd.scrollTop = top; }
+}
 
 /* ---------- Tube ---------- */
 const vItem = (it, app = "tube", extra = "") => `<button class="li" data-play='${esc(JSON.stringify({ app, id: it.id, title: it.title, sub: it.sub }))}'>
@@ -686,7 +747,7 @@ function mNext(auto) { if (!M.list.length) return; M.i = (M.i + 1) % M.list.leng
 function mPrev() { if (!M.list.length) return; try { if (M.p && M.p.getCurrentTime() > 4) { M.p.seekTo(0, true); return; } } catch (e) {} M.i = (M.i - 1 + M.list.length) % M.list.length; mStart(); }
 function mToggle() { if (!M.p || !M.ready) return; M.playing ? M.p.pauseVideo() : M.p.playVideo(); M.playing = !M.playing; mDraw(); }
 function mPause() { try { if (M.p && M.ready && M.playing) { M.p.pauseVideo(); M.playing = false; mDraw(); } } catch (e) {} }
-function mDraw() { $$(".js-pp").forEach(b => b.innerHTML = ppIcon()); miniShow(); if (cur().name === "np") { $(".np .t") && ($(".np .t").textContent = M.cur.title); } }
+function mDraw() { $$(".js-pp").forEach(b => b.innerHTML = ppIcon()); miniShow(); if (cur().name === "home") hmRefresh(); if (cur().name === "np") { $(".np .t") && ($(".np .t").textContent = M.cur.title); } }
 setInterval(() => {
   if (!M.p || !M.ready || !M.cur) return;
   try { const t = M.p.getCurrentTime() || 0, d = M.p.getDuration() || 0;
@@ -968,6 +1029,9 @@ document.addEventListener("click", e => {
   if (d.play) { const a = JSON.parse(d.play); go(a.app === "movies" ? "movieplay" : "tubeplay", a); return; }
   if (d.st) { const st = CFG.stations.find(x => x.key === d.st); mPlayList(st.songs.map(row3), 0, st.name); return; }
   if (d.song) { const s = JSON.parse(d.song), list = s.from === "recent" ? S.recentMusic.slice() : lastSongs; mPlayList(list, s.i, s.from === "recent" ? "Recently played" : "Search"); return; }
+  if (d.hq !== undefined) { M.i = +d.hq; mStart(); homeDD = false; hmRefresh(); return; }
+  if (d.hst) { const st = CFG.stations.find(x => x.key === d.hst); M.list = st.songs.map(row3); M.i = 0; M.from = st.name; mStart(); hmRefresh(); return; }
+  if (d.hrec) { const i = S.recentMusic.findIndex(x => x.id === d.hrec); if (i >= 0) { M.list = S.recentMusic.slice(); M.i = i; M.from = "Recently played"; mStart(); homeDD = false; hmRefresh(); } return; }
   if (d.ch) { go("liveplay", { ch: d.ch }); return; }
   if (d.mf) { const a = JSON.parse(d.mf); stack[stack.length - 1] = { name: "movies", arg: a }; render(""); return; }
   if (d.th !== undefined) { const th = CFG.theater[+d.th]; th.app ? go(th.app, {}) : openWeb(th.url); return; }
@@ -983,6 +1047,7 @@ document.addEventListener("click", e => {
   if (!a) return;
   if (a === "back") { closeSheet(); back(); }
   else if (a === "unlock") go("home", {}, true);
+  else if (a === "hmdd") { homeDD = !homeDD; hmRefresh(); }
   else if (a === "cont") { const c = S.cont; go(c.app === "movies" ? "movieplay" : "tubeplay", { app: c.app, id: c.id, title: c.title, sub: c.sub }); }
   else if (a === "mpp") mToggle();
   else if (a === "mnext") { if (t.closest("#mini") && !M.cur) return; mNext(); }
