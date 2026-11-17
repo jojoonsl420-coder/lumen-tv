@@ -519,7 +519,7 @@ body.booted .view{animation:homeIn 1.1s var(--ease) both}
    ===================================================================== */
 const CONFIG = {
   osName: "lumen",
-  version: "3.2",                // shown on the home screen; matches the folder name
+  version: "3.3",                // shown on the home screen; matches the folder name
   homeStyle: "rail",            // home screen layout: "dock" | "grid" | "rail"  (try ?home=grid in a browser)
   screensaverMinutes: 4,        // home screen idles into the ambient clock (0 = never)
   sounds: true,                 // interface sounds (power, clicks, app opening, hover ticks...)
@@ -645,6 +645,12 @@ const CONFIG = {
     years:  [["2020", "2020s", 2020, 2099], ["2010", "2010s", 2010, 2019], ["2000", "2000s", 2000, 2009], ["1990", "1990s", 1990, 1999], ["old", "Before 1990", 0, 1989]],
     lengths: [["short", "Under 90 min", 0, 5400], ["mid", "90 min – 2 hr", 5400, 7200], ["long", "Over 2 hours", 7200, 1e9]],
     sorts:  [["new", "Newest added"], ["year", "Release year"], ["az", "A – Z"]],
+    hollywood: [                // bigger films: these services only play on their own site, so the whole TV opens it
+      { name: "Pluto TV Movies",  url: "https://pluto.tv/on-demand",          note: "The Matrix, Bad Santa & more",  g1: "#2b2bff", g2: "#a100ff" },
+      { name: "Tubi",             url: "https://tubitv.com/home",             note: "Huge free movie library",       g1: "#ff5a00", g2: "#7a1a00" },
+      { name: "YouTube Free Movies", url: "https://www.youtube.com/feed/storefront", note: "Studio films free with ads", g1: "#ff3b3b", g2: "#6b0000" },
+      { name: "Plex Movies",      url: "https://watch.plex.tv/movies",        note: "Free movies with ads",          g1: "#ffb400", g2: "#c25b00" }
+    ],
     rows: [                     // [row title, searches to combine]
       ["Movie Central",  ["Movie Central full movie"]],
       ["Action",         ["Midnight Screening action full movie", "Popcornflix action full movie", "Maverick Movies action full movie", "Movie Central action full movie"]],
@@ -1500,6 +1506,9 @@ function renderMoviesBrowse() {
     <div class="hero" id="mhero"><div class="art" style="--g1:#ff5f45;--g2:#3d0612"></div><div class="shade"></div>
       <div class="meta"><div class="eyebrow">Free full movies · no account</div><h2>Movies</h2></div></div>
     ${hist.length ? `<div class="row"><h3>Continue watching</h3><div class="track">${hist.map(h => movieCard({ id: h.id, title: h.title, ch: h.sub })).join("")}</div></div>` : ""}
+    <div class="row"><h3>Hollywood <small class="mcount">opens the full site on the TV · click the TV and pick Home to come back</small></h3></div>
+    <div class="sites">${CONFIG.movies.hollywood.map(h => `<button class="site" data-url="${esc(h.url)}" style="--g1:${h.g1};--g2:${h.g2}">
+      <span class="stag ext">Opens full site</span><b>${esc(h.name)}</b><small>${esc(h.note)}</small></button>`).join("")}</div>
     <div class="row" id="mnew"><h3>New this week</h3><div class="track"><div class="empty glass">Finding the newest movies…</div></div></div>
     ${CONFIG.movies.rows.map((r, i) => `<div class="row" id="mrw${i}"><h3>${esc(r[0])}</h3><div class="track" id="mr${i}"><div class="empty glass">Loading…</div></div></div>`).join("")}
     <div class="note glass">${ICON.info}<div>Every movie here is posted for free by its studio or distributor on their own official YouTube channel (Movie Central, FilmRise, Popcornflix, Maverick Movies, The Midnight Screening, Flix For Free, Warner Bros.). No account needed; YouTube may show ads.</div></div>`);
