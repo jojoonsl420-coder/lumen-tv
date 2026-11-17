@@ -196,7 +196,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--body);font-fam
 <script>
 "use strict";
 /* ================= settings ================= */
-const VERSION = "2.8";
+const VERSION = "2.9";
 const SEARCH_SERVERS = ["https://api.piped.private.coffee", "https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de", "https://pipedapi.leptons.xyz", "https://pipedapi.reallyaweso.me"];
 const COLORS = {   // body = the prim colour of the Pod, so the page blends into the model
   Silver: { body: "#d6d9e0", sheen: "#eef0f4", w1: "#fbfbfc", w2: "#dcdde2", c1: "#e6e7eb", c2: "#c8c9cf", ink: "#8a8c94", hi: "#2f7cf6", hi2: "#5d9bff" },
@@ -323,9 +323,11 @@ function readIn() {
   for (const part of h.split("&")) {        // split first, then decode, so a name with & or = can't break it
     const i = part.indexOf("="), k = i < 0 ? part : part.slice(0, i), v = i < 0 ? "" : dec(part.slice(i + 1));
     if (k === "u" && /^https:\/\/[a-z0-9.-]+\.secondlife\.io(:\d+)?\//i.test(v)) { CB = v; lastSent = ""; try { localStorage.setItem("lumenPodCb", v); } catch (e) {} reportHash(); }
-    else if (k === "c") { setColor(v, false); const t = view(); if (t.type === "color") { colorSync(t); colorPaint(t); } else { if (t.refresh) t.refresh(); render(); } }
+    else if (k === "c") { setColor(v, false); if (!stack.length) continue; const t = view(); if (t.type === "color") { colorSync(t); colorPaint(t); } else { if (t.refresh) t.refresh(); render(); } }
     else if (k === "pause" && yt && ytReady) yt.pauseVideo();
     else if (k === "al") { S.alerts = v !== "0"; save(); const t = view(); if (t.refresh) { t.refresh(); render(); } }
+    else if (k === "m" && MODE === "worn") applyMirror(v);
+    else if (k === "np" && MODE === "worn" && !stack.length) { P.set("np", v); wornScreen(); }
     else if (k === "near") { const d = (h.match(/(?:^|&)d=(\d+)/) || [])[1]; nearby(v, d); }
     else if (k === "play" && yt && ytReady) yt.playVideo();
   }
@@ -384,6 +386,7 @@ window.onYouTubeIframeAPIReady = () => {
         else if (e.data === 2) playing = false;
         else if (e.data === 0) { playing = false; next(true); }
         drawBar(); if (view().type === "np") drawNP();
+        mirrorSoon();
       },
       onError: () => {      // not allowed outside YouTube (101/150) or gone: skip it
         toast("Can't play that one, skipping");
@@ -548,7 +551,7 @@ function colorPaint(v) {
   }[v.mode] || (v.sel === 6 ? "Press the middle to make your own colour, or click the circle." : "Turn to choose, middle to pick. Or click a colour.");
   $("#title").textContent = "Color · " + colorLabel();
 }
-function colorCustom(v) { setColor(hsvHex(v.h, v.s, v.b), true); colorPaint(v); }
+function colorCustom(v) { setColor(hsvHex(v.h, v.s, v.b), true); colorPaint(v); mirrorSoon(); }
 function colorStep(v, d) {
   if (!v.mode) { v.sel = (v.sel + d + 7) % 7; colorPaint(v); return; }
   if (v.mode === "h") v.h = (v.h + d * 6 + 360) % 360;
@@ -583,7 +586,7 @@ document.addEventListener("pointerdown", e => {
 }, true);
 function screenMode() {
   $("#screen").classList.toggle("dark", S.screen === "Dark");
-  $("#screen").classList.toggle("lights", S.bg !== "Plain" && MODE !== "worn");
+  $("#screen").classList.toggle("lights", S.bg !== "Plain");
 }
 function bright() { $("#dim").style.opacity = { High: 0, Medium: .22, Low: .45 }[S.bright] || 0; }
 
@@ -646,6 +649,7 @@ function render(dir) {
   if (v.type === "list") scrollSel(el, v);
   drawBar(); ytShow(); if (v.type === "np") progress();
   if (v.type === "color") colorPaint(v);
+  mirrorSoon();
 }
 function ytShow() {
   const v = view(), on = v.type === "np" && !!cur && !anim && MODE !== "worn";
@@ -798,13 +802,72 @@ addEventListener("keydown", e => {
 
 /* ---- progress ---- */
 function progress() {
-  if (view().type !== "np" || !cur || !ytReady || !yt.getDuration) return;
-  const t = yt.getCurrentTime() || 0, d = yt.getDuration() || 0, b = $("#pbar");
+  if (view().type !== "np" || !cur) return;
+  let t = 0, d = 0;
+  if (MODE === "worn") { if (!mirP) return; d = mirP.dur; t = Math.min(d || 1e9, mirP.pos + (mirP.on ? (Date.now() - mirP.at) / 1000 : 0)); }
+  else { if (!ytReady || !yt.getDuration) return; t = yt.getCurrentTime() || 0; d = yt.getDuration() || 0; }
+  const b = $("#pbar");
   if (!b) return;
   b.style.width = d ? (100 * t / d) + "%" : "0";
   $("#tnow").textContent = fmt(t); $("#tleft").textContent = "-" + fmt(d - t);
 }
 setInterval(progress, 500);
+
+/* ================= mirror: the hand Pod copies this screen =================
+   The HUD page sends a small picture of its screen (which menu, which row, the song, progress, colour)
+   to the Pod's script, which passes it to your hand Pod, whose page draws the same screen. */
+const b64e = t => btoa(unescape(encodeURIComponent(t)));
+const b64d = t => decodeURIComponent(escape(atob(t)));
+const cut = (t, n) => { t = String(t || ""); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
+let mirT = 0, mirLast = "";
+function mirrorSoon() { if (MODE === "worn") return; clearTimeout(mirT); mirT = setTimeout(sendMirror, 450); }
+function mirrorState() {
+  const v = view(), k = colorKey(S.color);
+  const m = { v: v.type || "list", c: k ? k.toLowerCase() : (normHex(S.color) || "").slice(1), d: S.screen === "Dark" ? 1 : 0, b: S.bg === "Plain" ? 0 : 1, r: S.bright };
+  if (v.type === "list") {
+    const n = (v.items || []).length, a = Math.max(0, Math.min((v.sel || 0) - 2, n - 6));
+    m.t = cut(v.title, 18); m.a = a; m.s = (v.sel || 0) - a;
+    m.i = (v.items || []).slice(a, a + 6).map(it => [cut(it.label, 22), cut(it.small || "", 18), cut(it.val || "", 10), it.go ? 1 : 0]);
+    if (!n) m.e = cut(String(v.empty || "").replace(/<[^>]+>/g, " "), 80);
+  } else if (v.type === "kb") { m.q = cut(v.q, 24); m.k = v.k; }
+  else if (v.type === "color") { m.s = v.sel; }
+  if (cur) {
+    let pos = 0, dur = 0;
+    try { pos = ytReady ? yt.getCurrentTime() || 0 : 0; dur = ytReady ? yt.getDuration() || 0 : 0; } catch (e) {}
+    m.n = [cur.id, cut(cur.title, 40), cut(cur.sub, 30), cut(Q.from, 24), Q.i + 1, Q.list.length];
+    m.p = [Math.round(pos), Math.round(dur), playing ? 1 : 0];
+  }
+  return JSON.stringify(m);
+}
+function sendMirror() {
+  if (MODE === "worn" || !CB) return;
+  let enc = b64e(mirrorState());
+  if (enc.length > 760) return;                 // keeps the address the hand Pod shows under SL's limit
+  if (enc === mirLast) return;
+  mirLast = enc;
+  fetch(CB, { method: "POST", mode: "no-cors", body: "m=" + enc }).catch(() => { mirLast = ""; });
+}
+setInterval(() => { if (playing) mirrorSoon(); }, 15000);   // keep the hand Pod's progress bar honest
+
+/* ---- hand Pod side: draw what the HUD Pod shows ---- */
+let mirP = null;
+function applyMirror(enc) {
+  let m; try { m = JSON.parse(b64d(enc)); } catch (e) { return; }
+  if (m.c) setColor(m.c, false);
+  S.screen = m.d ? "Dark" : "Light"; S.bg = m.b ? "Lights" : "Plain"; if (m.r) S.bright = m.r;
+  $("#bar").style.display = ""; $("#views").style.top = "";
+  screenMode(); bright();
+  if (m.n) { cur = { id: m.n[0], title: m.n[1], sub: m.n[2] }; Q.from = m.n[3]; Q.i = m.n[4] - 1; Q.list = new Array(m.n[5]).fill(cur); }
+  playing = !!(m.p && m.p[2]);
+  mirP = m.p ? { pos: m.p[0], dur: m.p[1], on: !!m.p[2], at: Date.now() } : null;
+  let v;
+  if (m.v === "np" && cur) v = { type: "np" };
+  else if (m.v === "kb") v = { type: "kb", title: "Search", q: m.q || "", k: m.k || 0 };
+  else if (m.v === "color") { v = colorView(); v.sel = m.s; }
+  else v = { type: "list", title: m.t || "lumen", sel: m.s || 0, empty: m.e || "",
+             items: (m.i || []).map(x => ({ label: x[0], small: x[1], val: x[2], go: x[3] ? () => ({}) : null })) };
+  stack.length = 0; stack.push(v); render();
+}
 
 /* ================= worn copy: shows the song, never plays ================= */
 function wornScreen() {
@@ -819,7 +882,7 @@ function wornScreen() {
 /* ================= start ================= */
 setColor(P.get("c") && (colorKey(P.get("c")) || normHex(P.get("c"))) ? P.get("c") : S.color, false);
 bright(); screenMode();
-if (MODE === "worn") wornScreen();
+if (MODE === "worn") { wornScreen(); readIn(); }
 else {
   stack.push(mainMenu()); render();
   loadYT(); readIn();
