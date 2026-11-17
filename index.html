@@ -82,6 +82,9 @@ body.leaving .view{animation:viewOut .22s ease-in both}
 .i-music{--g1:#ff4d7a;--g2:#9b1cff}
 .i-pulse{--g1:#b6ff3b;--g2:#00b86b}
 .i-theater{--g1:#ffd36e;--g2:#ff5a36}
+.i-movies{--g1:#ff5f45;--g2:#8b0a2e}
+.theme-movies{--accent:#ff5f45}
+body.theme-movies #wall{--w1:#e6392b;--w2:#ff8a3d;--w3:#3d0612}
 .i-ambient{--g1:#2a3d66;--g2:#0b1022}
 .i-web{--g1:#62d2ff;--g2:#1a5cff}
 .theme-web{--accent:#4aa8ff}
@@ -335,6 +338,16 @@ body.theme-theater #wall{--w1:#ff9500;--w2:#ff3b30;--w3:#4a1d00}
   background:linear-gradient(140deg,var(--g1),var(--g2));box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 .4rem 1rem rgba(0,0,0,.35)}
 .player video{position:absolute;inset:0;width:100%;height:100%;background:#000;object-fit:contain}
 .grid>.empty{grid-column:1/-1;margin:0}
+.mfilters{margin:.4rem 4.5rem 2rem;padding:1.1rem 1.4rem;border-radius:1.3rem;display:flex;flex-direction:column;gap:.75rem}
+.frow{display:grid;grid-template-columns:6.4rem 1fr;align-items:start;gap:.6rem}
+.flab{padding-top:.62rem;font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.chips{display:flex;flex-wrap:wrap;gap:.45rem}
+.chip{height:2.25rem;padding:0 1rem;border-radius:99rem;font-size:.84rem;font-weight:600;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);
+  transition:transform .35s var(--spring),background .25s}
+.chip:hover{background:rgba(255,255,255,.2);transform:scale(1.07)}
+.chip.on{background:var(--accent);color:#fff;box-shadow:0 .5rem 1.2rem rgba(0,0,0,.35)}
+.row h3 .mcount{font-size:.85rem;font-weight:600;color:var(--dim);margin-left:.6rem}
+.row h3 .mclear{height:2.1rem;padding:0 1rem;font-size:.78rem;margin-left:1rem;vertical-align:middle}
 .card .thumb img.pbg{position:absolute;inset:0;filter:blur(1rem) brightness(.6);transform:scale(1.3)}
 .card .thumb img.pfit{position:absolute;inset:0;object-fit:contain}
 .hero img.hbg{filter:blur(2.2rem) brightness(.55) saturate(1.2);transform:scale(1.25)}
@@ -506,7 +519,7 @@ body.booted .view{animation:homeIn 1.1s var(--ease) both}
    ===================================================================== */
 const CONFIG = {
   osName: "lumen",
-  version: "3.1",                // shown on the home screen; matches the folder name
+  version: "3.2",                // shown on the home screen; matches the folder name
   homeStyle: "rail",            // home screen layout: "dock" | "grid" | "rail"  (try ?home=grid in a browser)
   screensaverMinutes: 4,        // home screen idles into the ambient clock (0 = never)
   sounds: true,                 // interface sounds (power, clicks, app opening, hover ticks...)
@@ -613,8 +626,44 @@ const CONFIG = {
               "philza", "fanum", "plaqueboymax", "stableronaldo", "lacy", "clix", "bugha", "nickeh30", "esl_csgo", "valorant", "riotgames", "fortnite"]
   },
 
+  movies: {                     // free full movies posted by the studios & distributors themselves on their official YouTube channels
+    channels: {                 // only uploads from these verified channels are shown
+      "UCGBzBkV-MinlBvHBzZawfLQ": "Movie Central",
+      "UC8IHAQMuiJdY6ALuhG7iU8Q": "FilmRise",
+      "UCVFYikepF-avelvuIaQ_lHA": "Popcornflix",
+      "UC2u3R3pjOiPZu4LtTlKkxdw": "Maverick Movies",
+      "UC6A_LC-A5NVJ2vw9A0OjCug": "The Midnight Screening",
+      "UCgfcqu6AlTobWNcVp5yM86w": "Flix For Free",
+      "UCgKkNPU2Ib7_TcyAl8M2S-w": "Warner Bros."
+    },
+    from: [                     // [key, shown name, what to search for that channel]
+      ["moviecentral", "Movie Central", "Movie Central"], ["filmrise", "FilmRise", "FilmRise Movies"], ["popcornflix", "Popcornflix", "Popcornflix"],
+      ["maverick", "Maverick Movies", "Maverick Movies"], ["midnight", "The Midnight Screening", "Midnight Screening"], ["flix", "Flix For Free", "Flix For Free"]
+    ],
+    genres: [["action", "Action"], ["thriller", "Thriller"], ["comedy", "Comedy"], ["horror", "Horror"], ["drama", "Drama"], ["family", "Family"],
+             ["romance", "Romance"], ["scifi", "Sci-Fi", "sci-fi"], ["crime", "Crime"], ["western", "Western"], ["documentary", "Documentary"], ["christmas", "Christmas"]],
+    years:  [["2020", "2020s", 2020, 2099], ["2010", "2010s", 2010, 2019], ["2000", "2000s", 2000, 2009], ["1990", "1990s", 1990, 1999], ["old", "Before 1990", 0, 1989]],
+    lengths: [["short", "Under 90 min", 0, 5400], ["mid", "90 min – 2 hr", 5400, 7200], ["long", "Over 2 hours", 7200, 1e9]],
+    sorts:  [["new", "Newest added"], ["year", "Release year"], ["az", "A – Z"]],
+    rows: [                     // [row title, searches to combine]
+      ["Movie Central",  ["Movie Central full movie"]],
+      ["Action",         ["Midnight Screening action full movie", "Popcornflix action full movie", "Maverick Movies action full movie", "Movie Central action full movie"]],
+      ["Thrillers",      ["Midnight Screening thriller full movie", "Popcornflix thriller full movie", "Movie Central thriller full movie"]],
+      ["Comedy",         ["Popcornflix comedy full movie", "Maverick Movies comedy full movie", "FilmRise Movies comedy full movie"]],
+      ["Horror",         ["Popcornflix horror full movie", "Midnight Screening horror full movie", "Flix For Free horror full movie"]],
+      ["FilmRise",       ["FilmRise full movie"]],
+      ["Family",         ["FilmRise Movies family full movie", "Popcornflix family full movie", "Maverick Movies family full movie"]],
+      ["Romance",        ["Maverick Movies romance full movie", "Popcornflix romance full movie", "Midnight Screening romance full movie"]],
+      ["Maverick Movies", ["Maverick Movies full movie"]],
+      ["Popcornflix",    ["Popcornflix full movie"]],
+      ["The Midnight Screening", ["Midnight Screening full movie"]],
+      ["Christmas",      ["Maverick Movies christmas full movie", "Midnight Screening christmas full movie", "Movie Central christmas full movie", "Popcornflix christmas full movie"]]
+    ]
+  },
+
   theater: {                    // streaming services: most open as their own app inside lumen
     apps: [
+      { id: "movies",      name: "Movies",      kind: "goto",        note: "Newer free full movies",        g1: "#ff5f45", g2: "#8b0a2e", go: { app: "movies" } },
       { id: "classics",    name: "Classics",    kind: "archive",     note: "Old movies, cartoons & TV",      g1: "#d4a62a", g2: "#3b2604" },
       { id: "vimeo",       name: "Vimeo",       kind: "vimeo",       note: "Award-winning short films",      g1: "#17d5ff", g2: "#0063a3" },
       { id: "nasa",        name: "NASA",        kind: "nasa",        note: "Launches, missions & space",     g1: "#2f6bff", g2: "#000c2a" },
@@ -637,6 +686,7 @@ const ICON = {
   pulse: '<svg viewBox="0 0 48 48" fill="none"><path d="M5 26h8l4-10 7 20 5-14 3 4h11" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   theater: '<svg viewBox="0 0 48 48" fill="none"><path d="M8 15a3 3 0 0 1 3-3h26a3 3 0 0 1 3 3v4a5 5 0 0 0 0 10v4a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3v-4a5 5 0 0 0 0-10z" fill="#fff"/><path d="M24 18.5l1.7 3.5 3.8.5-2.8 2.6.7 3.8-3.4-1.8-3.4 1.8.7-3.8-2.8-2.6 3.8-.5z" fill="#ff7a3c"/></svg>',
   web: '<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="3.2"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c5 4.5 7 10 7 16s-2 11.5-7 16c-5-4.5-7-10-7-16s2-11.5 7-16z" stroke-linejoin="round"/></svg>',
+  movies: '<svg viewBox="0 0 48 48" fill="none"><rect x="7" y="13" width="34" height="25" rx="4" fill="#fff"/><path d="M7 13l5-6M17 13l5-6M27 13l5-6M37 13l4-5" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M21 20.5v10l8.5-5z" fill="#e6392b"/></svg>',
   music: '<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" stroke="#fff" stroke-opacity=".5" stroke-width="3"/><circle cx="20.5" cy="30" r="4.6" fill="#fff"/><path d="M24.6 30V15.2l9-2.6v5.2l-9 2.6" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/></svg>',
   apps: '<svg viewBox="0 0 48 48" fill="#fff"><rect x="9" y="9" width="8" height="8" rx="2.4"/><rect x="20" y="9" width="8" height="8" rx="2.4"/><rect x="31" y="9" width="8" height="8" rx="2.4"/><rect x="9" y="20" width="8" height="8" rx="2.4"/><rect x="20" y="20" width="8" height="8" rx="2.4"/><rect x="31" y="20" width="8" height="8" rx="2.4"/><rect x="9" y="31" width="8" height="8" rx="2.4"/><rect x="20" y="31" width="8" height="8" rx="2.4"/><rect x="31" y="31" width="8" height="8" rx="2.4"/></svg>',
   ambient: '<svg viewBox="0 0 48 48" fill="none"><path d="M30 9a15 15 0 1 0 9 26.8A16 16 0 0 1 30 9z" fill="#fff"/><circle cx="36" cy="13" r="1.8" fill="#fff"/><circle cx="40.5" cy="21" r="1.2" fill="#fff" fill-opacity=".7"/></svg>',
@@ -653,6 +703,7 @@ const APPS = [
   { id: "tube",    name: "Tube",    cls: "i-tube",    desc: "YouTube, search & watch together" },
   { id: "music",   name: "TubeMusic", cls: "i-music", desc: "Music stations, listen together" },
   { id: "live",    name: "Live",    cls: "i-live",    desc: "Twitch streams with chat" },
+  { id: "movies",  name: "Movies",  cls: "i-movies",  desc: "Free full movies, no account" },
   { id: "theater", name: "Theater", cls: "i-theater", desc: "Free movies & live TV sites" },
   { id: "web",     name: "Browser", cls: "i-web",     desc: "Any website, last 3 saved" },
   { id: "ambient", name: "Ambient", cls: "i-ambient", desc: "Aurora clock screensaver" }
@@ -1308,6 +1359,189 @@ function renderWeb() {
   setTimeout(() => { const i = $(".urlbar input"); if (i) i.focus(); }, 400);
 }
 
+/* ---------- MOVIES: free full movies from the studios' own official channels ---------- */
+async function movieFind(q) {                 // search, keep only full-length uploads from the verified channels (cached 1 hour)
+  const key = "mv." + q.toLowerCase();
+  try { const c = JSON.parse(localStorage.getItem("lumen." + key) || "null"); if (c && Date.now() - c.t < 3600000) return c.d; } catch (e) {}
+  const pref = store.get("searchOk", "");
+  const servers = [...new Set([pref, ...CONFIG.searchServers].filter(Boolean))];
+  for (const base of servers) {
+    try {
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 9000);
+      const r = await fetch(`${base}/search?q=${encodeURIComponent(q)}&filter=videos`, { signal: ctl.signal }); clearTimeout(tm);
+      if (!r.ok) continue;
+      const j = await r.json(); if (!j.items) continue;
+      const d = j.items.filter(x => x.url && /watch\?v=/.test(x.url) && x.duration >= 3000 && CONFIG.movies.channels[(x.uploaderUrl || "").split("/").pop()])
+        .map(x => ({ id: x.url.split("v=")[1].slice(0, 11), title: cleanTitle(x.title || ""), ch: CONFIG.movies.channels[x.uploaderUrl.split("/").pop()],
+          dur: x.duration, up: x.uploaded || 0, ago: x.uploadedDate || "", yr: textYear(x.title || "", x.shortDescription) }));
+      store.set("searchOk", base);
+      try { localStorage.setItem("lumen." + key, JSON.stringify({ t: Date.now(), d })); } catch (e) {}
+      return d;
+    } catch (e) { /* next server */ }
+  }
+  throw new Error("busy");
+}
+const textYear = (title, desc) => {           // a year in the title, or one marked as the release year in the description
+  const Y = "(19[2-9]\\d|20[0-3]\\d)";
+  const m = title.match(new RegExp("\\b" + Y + "\\b")) || (desc || "").match(new RegExp("\\(" + Y + "\\)|\\b(?:released?|release year|year)\\D{0,12}" + Y + "\\b", "i"));
+  const y = m && +(m[1] || m[2]); return y && y <= new Date().getFullYear() ? y : 0;
+};
+const cleanTitle = t => (/full free|maverick/i.test(t) && /"([^"]{2,60})"/.test(t) ? t.match(/"([^"]{2,60})"/)[1] : t.split(/\s+[|•]\s+/)[0]                                  // "Route 9 | Kyle MacLachlan | Thriller" -> "Route 9"
+  .replace(/\s*\((full movie|full film|free)[^)]*\).*$/i, "")                         // "Djinn (Full Movie) Horror" -> "Djinn"
+  .replace(/\s*[-–—:]?\s*\bfull (hd )?(movie|film)\b.*$/i, "")                       // "Dan Hawk FULL MOVIE" -> "Dan Hawk"
+  .replace(/\s*\((19|20)\d\d\)\s*$/, "")                                            // the year shows under the card instead
+  .replace(/\s{2,}/g, " ").trim()) || t;
+function mixLists(lists) {                     // take turns from each list, skip repeats
+  const out = [], seen = new Set(), n = Math.max(0, ...lists.map(l => l.length));
+  for (let i = 0; i < n; i++) for (const l of lists) { const m = l[i]; if (m && !seen.has(m.id)) { seen.add(m.id); out.push(m); } }
+  return out;
+}
+async function movieRow(queries) {
+  const res = await Promise.allSettled(queries.map(q => movieFind(q)));
+  if (res.every(r => r.status === "rejected")) throw new Error("busy");
+  return mixLists(res.map(r => r.status === "fulfilled" ? r.value : []));
+}
+/* release years: from the title/description, else Wikidata (free, no key), matched by running time; remembered on this TV */
+let YRS = null;
+const yrKey = m => m.title.toLowerCase() + "|" + Math.round((m.dur || 0) / 600);
+function yrCache() { if (!YRS) YRS = store.get("yrs", {}); return YRS; }
+const movieYear = m => m.yr || yrCache()[yrKey(m)] || 0;
+async function addYears(list) {
+  const c = yrCache(), todo = list.filter(m => !m.yr && m.title && !(yrKey(m) in c));
+  const titles = [...new Set(todo.map(m => m.title))].filter(t => t.length > 1 && t.length < 90);
+  for (let i = 0; i < titles.length; i += 60) {
+    const chunk = titles.slice(i, i + 60);
+    const vals = [...new Set(chunk.flatMap(t => [t, t.replace(/\b([A-Z])([A-Z']+)\b/g, (a, b, r) => b + r.toLowerCase())]))].map(t => JSON.stringify(t) + "@en").join(" ");
+    const q = `SELECT ?l ?film (MIN(YEAR(?d)) AS ?y) (SAMPLE(?len) AS ?min) WHERE { VALUES ?l { ${vals} } ?film rdfs:label ?l; wdt:P31/wdt:P279* wd:Q11424; wdt:P577 ?d. OPTIONAL { ?film wdt:P2047 ?len } } GROUP BY ?l ?film`;
+    try {
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 12000);
+      const r = await fetch("https://query.wikidata.org/sparql", { method: "POST", signal: ctl.signal,
+        headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/sparql-results+json" }, body: "query=" + encodeURIComponent(q) });
+      clearTimeout(tm); if (!r.ok) continue;
+      const rows = (await r.json()).results.bindings.map(b => ({ l: b.l.value.toLowerCase(), y: +b.y.value, min: b.min ? +b.min.value : 0 }));
+      todo.filter(m => chunk.includes(m.title)).forEach(m => {
+        const cands = rows.filter(x => x.l === m.title.toLowerCase()), mins = (m.dur || 0) / 60;
+        const near = cands.filter(x => x.min && Math.abs(x.min - mins) <= 12).sort((a, b) => Math.abs(a.min - mins) - Math.abs(b.min - mins));
+        c[yrKey(m)] = near.length ? near[0].y : cands.length === 1 && !cands[0].min ? cands[0].y : 0;
+      });
+    } catch (e) { /* Wikidata busy: try again next time */ }
+  }
+  const keys = Object.keys(c); if (keys.length > 2000) keys.slice(0, keys.length - 2000).forEach(k => delete c[k]);
+  store.set("yrs", c);
+  list.forEach(m => { if (!m.yr) m.yr = c[yrKey(m)] || 0; });
+  return list;
+}
+const MF = ["find", "g", "y", "len", "c", "sort"];              // the filter settings, kept in the page address
+function mfState() { const o = { app: "movies" }; MF.forEach(k => { const v = P.get(k); if (v) o[k] = v; }); if (!o.find && P.get("q") && !ytId(P.get("q"))) o.find = P.get("q"); return o; }
+function movieFilters(full) {
+  const st = mfState(), M = CONFIG.movies;
+  const row = (label, key, opts, anyLabel) => `<div class="frow"><span class="flab">${label}</span><div class="chips">
+    ${anyLabel ? `<button class="chip ${st[key] ? "" : "on"}" data-go='${attr({ ...st, [key]: "" })}'>${anyLabel}</button>` : ""}
+    ${opts.map(o => `<button class="chip ${st[key] === o[0] ? "on" : ""}" data-go='${attr({ ...st, [key]: st[key] === o[0] && anyLabel ? "" : o[0] })}'>${esc(o[1])}</button>`).join("")}</div></div>`;
+  return `<div class="mfilters glass">
+    ${row("Genre", "g", M.genres, "All")}
+    ${row("Released", "y", M.years, "Any year")}
+    ${full ? row("Length", "len", M.lengths, "Any length") + row("From", "c", M.from, "All channels") + row("Sort", "sort", M.sorts.slice(1), "Newest added") : ""}
+  </div>`;
+}
+async function renderMoviesList() {
+  const a = APPS.find(x => x.id === "movies"), st = mfState(), M = CONFIG.movies;
+  const G = M.genres.find(x => x[0] === st.g), Y = M.years.find(x => x[0] === st.y), L = M.lengths.find(x => x[0] === st.len), C = M.from.find(x => x[0] === st.c);
+  const label = [st.find ? `“${st.find}”` : "", G && G[1], Y && Y[1], L && L[1], C && "from " + C[1]].filter(Boolean).join(" · ") || "All movies";
+  $("#app").innerHTML = view("appview theme-movies", `${appbar(a, "Search free movies")}
+    ${movieFilters(true)}
+    <div class="row"><h3>${esc(label)} <small class="mcount" id="mcount"></small>
+      ${MF.some(k => k !== "find" && st[k]) ? `<button class="pill glass mclear" data-go='${attr(st.find ? { app: "movies", find: st.find } : { app: "movies" })}'>Clear filters</button>` : ""}</h3></div>
+    <div class="grid" id="res"><div class="empty glass">Finding movies…</div></div>`);
+  if (st.find) $(".search input").value = st.find;
+  const term = [st.find, G && (G[2] || G[1].toLowerCase())].filter(Boolean).join(" ");
+  const chans = C ? [C] : M.from;
+  const queries = term ? [...(C ? [] : [term + " full movie"]), ...chans.map(f => `${f[2]} ${term} full movie`)]
+    : C ? [`${C[2]} full movie`, ...["action", "thriller", "comedy", "drama"].map(g => `${C[2]} ${g} full movie`)]
+    : M.rows.flatMap(r => r[1]);
+  let list;
+  try {
+    const res = await pool(queries, 4, q => movieFind(q).catch(() => null));
+    if (res.every(r => r === null)) throw new Error("busy");
+    list = mixLists(res.filter(Boolean));
+  } catch (e) {
+    $("#res").innerHTML = `<div class="empty glass">The movie search is busy right now.
+      <div class="actions"><button class="pill primary" data-go='${attr({ ...st, r: now() })}'>Try again</button></div></div>`;
+    return;
+  }
+  if (C) list = list.filter(m => m.ch === C[1]);
+  if (L) list = list.filter(m => m.dur >= L[2] && m.dur < L[3]);
+  const show = () => {
+    let out = list;
+    if (Y) out = out.filter(m => { const y = movieYear(m); return y >= Y[2] && y <= Y[3]; });
+    out = [...out];
+    if (st.sort === "year") out.sort((p, q) => (movieYear(q) || 0) - (movieYear(p) || 0));
+    else if (st.sort === "az") out.sort((p, q) => p.title.localeCompare(q.title));
+    else out.sort((p, q) => (q.up || 0) - (p.up || 0));
+    $("#mcount").textContent = out.length ? out.length + (out.length === 1 ? " movie" : " movies") : "";
+    $("#res").innerHTML = out.length ? out.slice(0, 120).map(movieCard).join("")
+      : `<div class="empty glass">${Y && !list.some(movieYear) ? "Looking up release years…" : `No free movies match these filters right now.${Y ? " Only movies with a known release year show when a year is picked." : ""} Try fewer filters.`}</div>`;
+  };
+  show();
+  if (Y || st.sort === "year" || list.some(m => !m.yr)) { await addYears(list); show(); }
+}
+const movieGo = m => ({ app: "movies", v: m.id, t: m.title, u: m.ch });
+function movieCard(m) {
+  return `<button class="card" data-go='${attr(movieGo(m))}'>
+    <div class="thumb"><div class="art" style="--g1:#ff5f45;--g2:#8b0a2e">${esc((m.title || "?")[0])}</div><img src="${ytThumb(m.id)}" alt="" loading="lazy" onerror="${imgFail}" style="position:absolute;inset:0">
+      ${m.dur ? `<span class="badge">${fmtDur(m.dur)}</span>` : ""}</div>
+    <div class="t">${esc(m.title)}</div><div class="s">${esc([movieYear(m) || "", m.ch, m.ago].filter(Boolean).join(" · "))}</div></button>`;
+}
+function renderMoviesBrowse() {
+  const a = APPS.find(x => x.id === "movies");
+  const hist = store.get("history", []).filter(h => h.app === "movies");
+  $("#app").innerHTML = view("appview theme-movies", `${appbar(a, "Search free movies")}
+    ${movieFilters(false)}
+    <div class="hero" id="mhero"><div class="art" style="--g1:#ff5f45;--g2:#3d0612"></div><div class="shade"></div>
+      <div class="meta"><div class="eyebrow">Free full movies · no account</div><h2>Movies</h2></div></div>
+    ${hist.length ? `<div class="row"><h3>Continue watching</h3><div class="track">${hist.map(h => movieCard({ id: h.id, title: h.title, ch: h.sub })).join("")}</div></div>` : ""}
+    <div class="row" id="mnew"><h3>New this week</h3><div class="track"><div class="empty glass">Finding the newest movies…</div></div></div>
+    ${CONFIG.movies.rows.map((r, i) => `<div class="row" id="mrw${i}"><h3>${esc(r[0])}</h3><div class="track" id="mr${i}"><div class="empty glass">Loading…</div></div></div>`).join("")}
+    <div class="note glass">${ICON.info}<div>Every movie here is posted for free by its studio or distributor on their own official YouTube channel (Movie Central, FilmRise, Popcornflix, Maverick Movies, The Midnight Screening, Flix For Free, Warner Bros.). No account needed; YouTube may show ads.</div></div>`);
+  const all = [];
+  const done = (i, list) => {
+    const row = $("#mrw" + i), el = $("#mr" + i); if (!el) return;
+    if (!list.length) { row.remove(); return; }
+    el.innerHTML = list.map(movieCard).join(""); all.push(...list);
+  };
+  pool(CONFIG.movies.rows.map((r, i) => i), 4, i => movieRow(CONFIG.movies.rows[i][1]).then(list => done(i, list), () => done(i, []))).then(() => {
+    const seen = new Set(), fresh = all.filter(m => m.up && !seen.has(m.id) && seen.add(m.id)).sort((x, y) => y.up - x.up).slice(0, 16);
+    const el = $("#mnew .track");
+    if (el) el.innerHTML = fresh.length ? fresh.map(movieCard).join("") : `<div class="empty glass">The movie search is busy right now. Try again in a moment.</div>`;
+    const h = $("#mhero"), top = fresh[0];
+    if (h && top) {
+      h.dataset.go = JSON.stringify(movieGo(top));
+      h.innerHTML = `<div class="art" style="--g1:#ff5f45;--g2:#3d0612"></div><img src="${ytThumb(top.id, true)}" onerror="${imgHiFail(top.id)}" onload="${imgHiLoad(top.id)}" alt=""><div class="shade"></div>
+        <div class="meta"><div class="eyebrow">New · ${esc(top.ch)}</div><h2>${esc(top.title)}</h2><button class="pill primary">${ICON.play}Watch together</button></div>`;
+    }
+    rowArrows();
+    addYears(all).then(() => $$(".track .card").forEach(cd => {   // fill in release years on the cards
+      try { const g = JSON.parse(cd.dataset.go), m = all.find(x => x.id === g.v), y = m && movieYear(m), s = $(".s", cd);
+        if (y && s && !s.textContent.startsWith(y)) s.textContent = y + " · " + s.textContent; } catch (e) {}
+    }));
+  });
+}
+function renderMoviePlayer(id) {
+  const at = +P.get("at") || 0;
+  let start = 0; if (CONFIG.syncPlayback && at) { const e = now() - at; if (e > 3) start = e; }
+  const title = P.get("t") || "Movie", ch = P.get("u") || "Movies";
+  $("#app").innerHTML = view("player theme-movies", `
+    <iframe src="https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0&iv_load_policy=3&start=${start}&origin=${encodeURIComponent(location.origin)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <div class="catcher"></div>
+    <div class="hud">
+      <button class="pill glass round" data-go='${attr({ app: "movies" })}' title="Back">${ICON.back}</button>
+      <span class="pill glass together" title="Everyone nearby sees this"><i></i><span class="lbl">Watching together</span></span>
+      <button class="pill glass" data-go='${attr({ app: "movies", v: id, t: title, u: ch, at: now() })}' data-fresh="at" title="Restart for everyone">${ICON.restart}<span class="lbl">Restart for everyone</span></button>
+    </div>`);
+  remember({ app: "movies", id, title, sub: ch, thumb: ytThumb(id), go: { app: "movies", v: id, t: title, u: ch } });
+  setupHudIdle();
+}
+
 /* ---------- THEATER: every streaming service opens as its own app inside lumen ---------- */
 const STREAM = id => CONFIG.theater.apps.find(x => x.id === id);
 async function cachedJSON(url, ttl = 600) {          // every screen is a page load, so remember answers for a few minutes
@@ -1488,7 +1722,7 @@ function renderTheater() {
   const hist = store.get("history", []).filter(h => h.app === "theater" && h.go && STREAM(h.go.s)).slice(0, 12);
   const tiles = CONFIG.theater.apps.map(sa => {
     const go = sa.kind === "goto" ? sa.go : sa.kind === "site" ? null : { app: "theater", s: sa.id };
-    const tag = sa.kind === "site" ? "Opens full site" : sa.kind === "goto" ? "Opens Live" : "App";
+    const tag = sa.kind === "site" ? "Opens full site" : sa.kind === "goto" && sa.go.app === "live" ? "Opens Live" : "App";
     return `<button class="site" ${go ? `data-go='${attr(go)}'` : `data-url="${esc(sa.url)}"`} style="--g1:${sa.g1};--g2:${sa.g2}">
       <span class="stag ${sa.kind === "site" ? "ext" : ""}">${tag}</span><b>${esc(sa.name)}</b><small>${esc(sa.note || "")}</small></button>`;
   }).join("");
@@ -1543,7 +1777,7 @@ document.addEventListener("click", e => {
   if (!el) return;
   let p = {}; try { p = JSON.parse(el.dataset.go || "{}"); } catch (err) {}
   if (el.dataset.fresh === "at") p.at = now();
-  if (CONFIG.syncPlayback && (p.app === "tube" && p.v || p.app === "music" && (p.v || p.st) || p.app === "theater" && p.v) && !p.at) p.at = now();
+  if (CONFIG.syncPlayback && (p.app === "tube" && p.v || p.app === "music" && (p.v || p.st) || (p.app === "theater" || p.app === "movies") && p.v) && !p.at) p.at = now();
   go(p);
 });
 document.addEventListener("submit", e => {
@@ -1555,6 +1789,7 @@ document.addEventListener("submit", e => {
   else if (app === "music") { const id = ytId(raw); id ? go({ app, v: id }) : go({ app, find: raw }); }
   else if (app === "loops") { const id = ttId(raw); id ? go({ app, id }) : toast("Paste a full TikTok video link to add it to the feed"); }
   else if (app === "live") { const c = /twitch\.tv|kick\.com/.test(raw) ? chan(raw) : null; c ? go({ app, c }) : go({ app, find: raw }); }
+  else if (app === "movies") { const id = ytId(raw); id ? go({ app, v: id }) : go({ ...mfState(), find: raw }); }
   else if (app === "theater" && f.dataset.s) {
     const sa = STREAM(f.dataset.s), pv = PROVIDERS[sa.kind], id = pv.link && pv.link(raw);
     id ? go({ app, s: sa.id, v: id, at: now() }) : go({ app, s: sa.id, find: raw });
@@ -1786,6 +2021,11 @@ function route() {
     if (c) return renderChannelPlayer(app, c);
     const f = P.get("find") || q;
     return f ? renderLiveSearch(f) : renderChannelBrowse(app);
+  }
+  if (app === "movies") {
+    const id = P.get("v") || ytId(q);
+    if (id) return renderMoviePlayer(id);
+    return (q || MF.some(k => P.get(k))) ? renderMoviesList() : renderMoviesBrowse();
   }
   if (app === "theater") {
     if (q) { const u = /^https?:\/\//i.test(q) ? q : "https://" + q; return location.replace(u); }
