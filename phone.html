@@ -16,13 +16,13 @@
   --glass:rgba(255,255,255,.12);--glass2:rgba(255,255,255,.18);--stroke:rgba(255,255,255,.16);
   --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{width:100%;height:100%;overflow:hidden;background:#000}
+html,body{width:100%;height:100%;overflow:hidden;background:#030304}
 body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;user-select:none}
 button,input{font:inherit;color:inherit;border:0;background:none;outline:none}
 button{cursor:pointer}
 img{display:block}
 ::-webkit-scrollbar{display:none}
-#ph{position:absolute;left:0;top:0;width:450px;height:1018px;transform-origin:0 0;overflow:hidden;border-radius:52px;background:#0a0b14}
+#ph{position:absolute;left:0;top:0;width:450px;height:1018px;transform-origin:0 0;overflow:hidden;border-radius:46px;background:#0a0b14}
 /* ---------- wallpaper ---------- */
 #wall{position:absolute;inset:0;transition:background .6s}
 .w-lumen{background:radial-gradient(120% 60% at 15% 0%,#3b5bff,transparent 60%),radial-gradient(120% 60% at 100% 100%,#b56bff,transparent 60%),#0a0b14}
@@ -136,6 +136,8 @@ h3 small{font-size:13px;font-weight:500;color:var(--faint);margin-left:6px}
 .hm-row .ib svg{width:24px;height:24px}
 .hm-row .dd{background:rgba(255,255,255,.16)}.hm-row .dd svg{width:22px;height:22px;transition:transform .25s}
 .hm-row .dd.on svg{transform:rotate(180deg)}
+.hm-vol{display:flex;align-items:center;gap:12px;margin:4px 2px 2px;padding:11px 14px;border-radius:16px;background:rgba(255,255,255,.1)}
+.hm-vol svg{width:22px;height:22px;flex:none}.hm-vol input{flex:1}.hm-vol b{width:42px;text-align:right;font-size:14px}
 .hm-dd{max-height:430px;overflow-y:auto;padding:0 10px 12px;animation:hmIn .22s ease-out}
 @keyframes hmIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 .hm-dd h4{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55);margin:12px 4px 6px}
@@ -345,7 +347,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
    phone's scripts: they send #in:… (battery, alerts, radar, buttons),
    the page posts back over the phone's private https line.
    ===================================================================== */
-const VERSION = "1.3";
+const VERSION = "1.6";
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -541,7 +543,17 @@ function tone(f, len, vol = .12, type = "sine") {
   } catch (e) {}
 }
 const chime = () => { if (!S.as) return; tone(1318.5, .3, .16); setTimeout(() => tone(1975.5, .4, .14), 130); };
-const click = () => tone(2400, .01, .03, "triangle");
+// the tap sound: a short soft tick, the same as the lumen Pod's click wheel (no ring, no ping)
+function click() {
+  if (S.quiet) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const n = Math.floor(AC.sampleRate * .004), b = AC.createBuffer(1, n, AC.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
+    const src = AC.createBufferSource(), g = AC.createGain(); g.gain.value = .22;
+    src.buffer = b; src.connect(g); g.connect(AC.destination); src.start();
+  } catch (e) {}
+}
 
 let toastT = 0;
 function toast(m, ms = 2800) { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms); }
@@ -629,7 +641,9 @@ function musicW() {
         <div class="tx"><small>TubeMusic</small><b>Pick something to play</b></div>
         <button class="ib dd${open ? " on" : ""}" data-act="hmdd" aria-label="Pick music">${ic(I.ddown, 2.6)}</button></div>`;
   if (!open) return `<div class="hmw">${head}</div>`;
-  let body = `<h4>Stations</h4><div class="hm-chips">${CFG.stations.map(st => `<button data-hst="${st.key}" class="${M.from === st.name ? "on" : ""}">${esc(st.name)}</button>`).join("")}</div>`;
+  let body = `<h4>Volume <small style="text-transform:none;letter-spacing:0;font-weight:500">· or the buttons on the side</small></h4>
+    <div class="hm-vol">${ic(I.vol)}<input type="range" min="0" max="100" value="${S.vol}" data-range="vol" aria-label="Volume"><b>${S.vol}%</b></div>
+    <h4>Stations</h4><div class="hm-chips">${CFG.stations.map(st => `<button data-hst="${st.key}" class="${M.from === st.name ? "on" : ""}">${esc(st.name)}</button>`).join("")}</div>`;
   if (M.list.length) {
     body += `<h4>${M.list.length > 1 ? "Up next · tap a song" : "Playing"}</h4>` + M.list.map((x, i) => `<button class="hm-s${i === M.i ? " cur" : ""}" data-hq="${i}">
       <span class="n">${i === M.i ? (M.playing ? ic(I.eq, 2.4).replace("<svg", '<svg width="16" height="16"') : "❚❚") : i + 1}</span>
@@ -1066,7 +1080,10 @@ function volKey(d) {
   const h = $("#volhud"); h.querySelector("i").style.height = S.vol + "%"; h.classList.add("on");
   clearTimeout(volT); volT = setTimeout(() => h.classList.remove("on"), 1500);
 }
-function applyVol() { try { M.p && M.ready && M.p.setVolume(S.vol); } catch (e) {} try { V && V.setVolume && V.setVolume(S.vol); } catch (e) {} if (ccOpen) { const b = $$("#cc .slid b")[0]; if (b) b.textContent = S.vol + "%"; } }
+function applyVol() {
+  try { M.p && M.ready && M.p.setVolume(S.vol); } catch (e) {} try { V && V.setVolume && V.setVolume(S.vol); } catch (e) {}
+  $$('input[data-range="vol"]').forEach(i => { if (document.activeElement !== i) i.value = S.vol; const b = i.parentElement.querySelector("b:last-child"); if (b && b.closest(".slid,.hm-vol")) b.textContent = S.vol + "%"; });
+}
 
 /* =====================================================================
    clicks + typing
@@ -1122,7 +1139,7 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("input", e => {
   const r = e.target.dataset.range;
-  if (r) { S[r] = +e.target.value; save(); if (r === "bright") paint(); else applyVol(); const b = e.target.parentElement.querySelector("b:last-child"); if (b && ccOpen) b.textContent = S[r] + "%"; }
+  if (r) { S[r] = +e.target.value; save(); if (r === "bright") paint(); else applyVol(); const b = e.target.parentElement.querySelector("b:last-child"); if (b && b.closest(".slid,.hm-vol")) b.textContent = S[r] + "%"; }
 });
 document.addEventListener("change", e => {
   const k = e.target.dataset.pick; if (!k) return;
