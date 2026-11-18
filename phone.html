@@ -72,6 +72,18 @@ h3 small{font-size:13px;font-weight:500;color:var(--faint);margin-left:6px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{height:36px;padding:0 15px;border-radius:18px;background:rgba(255,255,255,.12);font-size:15px;font-weight:600;transition:background .2s}
 .chip.on{background:var(--hot,#ff5f45)}
+/* Marketplace */
+.mp-sign{border-radius:22px;padding:18px;background:linear-gradient(135deg,#1fb6c9,#0b5f8a);margin:4px 0 6px}
+.mp-sign b{display:block;font-size:20px;font-weight:700;letter-spacing:-.02em}
+.mp-sign p{font-size:14.5px;line-height:1.4;color:rgba(255,255,255,.88);margin:6px 0 14px}
+.mp-acct{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.1);margin:4px 0 6px}
+.mp-acct .tx{flex:1;min-width:0}.mp-acct b{display:block;font-size:15.5px}.mp-acct span{font-size:13px;color:var(--dim)}
+.mp-acct .pill{height:36px;padding:0 14px;font-size:14px}
+.mp-cats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mp-cats button{height:74px;border-radius:16px;padding:10px 12px;display:flex;align-items:flex-end;text-align:left;font-size:15.5px;font-weight:700;line-height:1.15;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.mp-quick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mp-quick .pill{width:100%}
+.mp-note{font-size:13px;color:var(--faint);text-align:center;margin:20px 8px 8px;line-height:1.45}
 .pill{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:46px;padding:0 22px;border-radius:23px;font-size:16px;font-weight:700;background:var(--glass2)}
 .pill svg{width:20px;height:20px}
 .pill.white{background:#f5f5f7;color:#0b0b0e}
@@ -333,7 +345,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
    phone's scripts: they send #in:… (battery, alerts, radar, buttons),
    the page posts back over the phone's private https line.
    ===================================================================== */
-const VERSION = "1.2";
+const VERSION = "1.3";
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -385,6 +397,7 @@ const WALLS = [["lumen", "lumen"], ["aurora", "Aurora"], ["sunset", "Sunset"], [
 /* ---------- icons (original line art) ---------- */
 const ic = (d, sw = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
 const I = {
+  market: "M5 8h14l-1.2 12H6.2z M9 8V6.5a3 3 0 0 1 6 0V8", cart: "M3 4h2l2.4 11h10.2L20 7H6.3 M9 20a1 1 0 1 0 0-.01 M17 20a1 1 0 1 0 0-.01",
   ddown: "M6 9l6 6 6-6", eq: "M5 20V10 M10 20V4 M15 20v-7 M20 20V8",
   tube: "M8 6.5v11l9-5.5z", music: "M9 18V6l10-2v12 M9 18a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0z M19 16a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0z",
   live: "M12 10a2 2 0 1 0 0 4a2 2 0 1 0 0-4z M8 8a6 6 0 0 0 0 8 M16 8a6 6 0 0 1 0 8 M5 5a10 10 0 0 0 0 14 M19 5a10 10 0 0 1 0 14",
@@ -407,13 +420,14 @@ const APPS = [
   { id: "live", name: "Live", bg: G("#b56bff", "#5b21f5") }, { id: "movies", name: "Movies", bg: G("#ff5f45", "#8b0a2e") },
   { id: "theater", name: "Theater", bg: G("#ffd36e", "#ff5a36") }, { id: "web", name: "Browser", bg: G("#62d2ff", "#1a5cff") },
   { id: "ambient", name: "Ambient", bg: G("#2a3d66", "#0b1022") }, { id: "settings", name: "Settings", bg: G("#5f6b85", "#252b3a") },
-  { id: "map", name: "Map", bg: G("#2fd18b", "#0a6b48") }, { id: "radar", name: "Radar", bg: G("#7cc4ff", "#1a3a8a") }
+  { id: "map", name: "Map", bg: G("#2fd18b", "#0a6b48") }, { id: "radar", name: "Radar", bg: G("#7cc4ff", "#1a3a8a") },
+  { id: "market", name: "Market", bg: G("#4fe3d6", "#0b6fa3") }
 ];
 const appIco = (a, big) => `<div class="ico" style="background:${a.bg}">${ic(I[a.id], 2)}</div>`;
 
 /* ---------- saved settings ---------- */
 const DEF = { color: "graphite", cable: "white", wall: "lumen", wp: "", al: 1, ar: 20, as: 1, alv: 0, quiet: 0, vol: 80, bright: 100,
-  cont: null, recentTube: [], recentMusic: [], web: [], muted: [] };
+  cont: null, recentTube: [], recentMusic: [], web: [], muted: [], mpSigned: 0, mpRecent: [] };
 let S = DEF;
 try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem("lumenPhone") || "{}")); } catch (e) {}
 if (P.get("c")) S.color = P.get("c");
@@ -632,6 +646,42 @@ function hmRefresh() {            // redraw the widget in place, keeping the lis
   const dd = w.querySelector(".hm-dd"), top = dd ? dd.scrollTop : 0;
   w.outerHTML = musicW();
   const nd = $(".home .hm-dd"); if (nd) { nd.style.animation = "none"; nd.scrollTop = top; }
+}
+
+/* ---------- Marketplace ----------
+   The Marketplace won't show inside another page, so every button opens it full screen on the phone
+   (the power button brings the phone back, straight to this app). Signing in happens on Second Life's
+   own sign-in page; the viewer's built-in browser keeps that sign-in, so the owner stays signed in. */
+const MP = "https://marketplace.secondlife.com";
+const MP_SIGNIN = "https://id.secondlife.com/openid/login?return_to=" + encodeURIComponent(MP + "/") + "&language=en-US&show_join=true";
+const MP_CATS = [["Apparel", 3, "#ff7eb3", "#b0306a"], ["Avatar Appearance", 332, "#c58bff", "#6a2fc9"], ["Avatar Accessories", 5, "#ffb36b", "#d1501f"],
+  ["Animations", 24, "#6fd3ff", "#1f6fd1"], ["Home and Garden", 6, "#7be3a0", "#1e8c58"], ["Gadgets", 231, "#8fa6ff", "#3a43c9"],
+  ["Vehicles", 20, "#ff8f7a", "#b3262f"], ["Animals", 139, "#ffd26e", "#c97a12"], ["Art", 29, "#f59ad8", "#9b2f8e"],
+  ["Celebrations", 83, "#ffe17a", "#e0662a"], ["Buildings", 34, "#9fd4c8", "#2c6e74"], ["Scripts", 33, "#9aa7b8", "#3b4658"],
+  ["Gachas", 867, "#ff9fc4", "#d0477e"], ["Everything Else", 2, "#b9c2d6", "#4a5370"]];
+const mpSearch = q => MP + "/products/search?search%5Bkeywords%5D=" + encodeURIComponent(q);
+SCR.market = () => `<div class="scr" style="--hot:#1fb6c9">${hd("Marketplace", `<button class="round" data-mp="cart" aria-label="Cart">${ic(I.cart)}</button>`)}
+  <form class="srch" data-search="market">${ic(I.search)}<input placeholder="Search the Marketplace"></form>
+  <div class="body">
+    ${S.mpSigned ? `<div class="mp-acct"><div class="tx"><b>Your account</b><span>Your viewer keeps you signed in</span></div><button class="pill" data-mp="signin">Switch</button></div>`
+      : `<div class="mp-sign"><b>Sign in to shop</b><p>Sign in once with your Second Life name. Your viewer remembers it, so the phone stays signed in next time.</p><button class="pill white" data-mp="signin">Sign in</button></div>`}
+    ${S.mpRecent.length ? `<h3>Recent searches <small><button data-act="mpclear" style="color:var(--faint);font-size:13px">Clear</button></small></h3><div class="chips">${S.mpRecent.map(q => `<button class="chip" data-mp="${esc("q:" + q)}">${esc(q)}</button>`).join("")}</div>` : ""}
+    <h3>Shop by category</h3>
+    <div class="mp-cats">${MP_CATS.map(c => `<button data-mp="c:${c[1]}" style="background:${G(c[2], c[3])}">${esc(c[0])}</button>`).join("")}</div>
+    <h3>Quick</h3>
+    <div class="mp-quick"><button class="pill" data-mp="home">${ic(I.market)}Front page</button><button class="pill" data-mp="cart">${ic(I.cart)}Cart</button></div>
+    <div class="mp-note">The Marketplace opens full screen.<br>Press the phone's power button to come back.</div>
+  </div></div>`;
+function mpOpen(k) {
+  let url = MP + "/", what = "the Marketplace";
+  if (k === "signin") { url = MP_SIGNIN; what = "Second Life sign-in"; S.mpSigned = 1; save(); }
+  else if (k === "cart") { url = MP + "/cart"; what = "your cart"; }
+  else if (k.startsWith("c:")) { url = MP + "/products/search?search%5Bcategory_id%5D=" + (+k.slice(2)); const c = MP_CATS.find(x => x[1] === +k.slice(2)); if (c) what = c[0]; }
+  else if (k.startsWith("q:")) { const q = k.slice(2); S.mpRecent = [q, ...S.mpRecent.filter(x => x.toLowerCase() !== q.toLowerCase())].slice(0, 8); save(); url = mpSearch(q); what = "“" + q + "”"; }
+  try { localStorage.setItem("lumenPhone.ret", JSON.stringify({ s: "market", t: Date.now() })); } catch (e) {}
+  mPause(); vStop();
+  toast("Opening " + what + " · power button to come back", 2600);
+  setTimeout(() => location.assign(url), 800);
 }
 
 /* ---------- Tube ---------- */
@@ -1032,6 +1082,7 @@ document.addEventListener("click", e => {
   if (d.hq !== undefined) { M.i = +d.hq; mStart(); homeDD = false; hmRefresh(); return; }
   if (d.hst) { const st = CFG.stations.find(x => x.key === d.hst); M.list = st.songs.map(row3); M.i = 0; M.from = st.name; mStart(); hmRefresh(); return; }
   if (d.hrec) { const i = S.recentMusic.findIndex(x => x.id === d.hrec); if (i >= 0) { M.list = S.recentMusic.slice(); M.i = i; M.from = "Recently played"; mStart(); homeDD = false; hmRefresh(); } return; }
+  if (d.mp) { mpOpen(d.mp); return; }
   if (d.ch) { go("liveplay", { ch: d.ch }); return; }
   if (d.mf) { const a = JSON.parse(d.mf); stack[stack.length - 1] = { name: "movies", arg: a }; render(""); return; }
   if (d.th !== undefined) { const th = CFG.theater[+d.th]; th.app ? go(th.app, {}) : openWeb(th.url); return; }
@@ -1048,6 +1099,7 @@ document.addEventListener("click", e => {
   if (a === "back") { closeSheet(); back(); }
   else if (a === "unlock") go("home", {}, true);
   else if (a === "hmdd") { homeDD = !homeDD; hmRefresh(); }
+  else if (a === "mpclear") { S.mpRecent = []; save(); rerender(); }
   else if (a === "cont") { const c = S.cont; go(c.app === "movies" ? "movieplay" : "tubeplay", { app: c.app, id: c.id, title: c.title, sub: c.sub }); }
   else if (a === "mpp") mToggle();
   else if (a === "mnext") { if (t.closest("#mini") && !M.cur) return; mNext(); }
@@ -1107,6 +1159,7 @@ document.addEventListener("submit", e => {
   else if (app === "movies") { const id = ytId(raw); if (id) go("movieplay", { app: "movies", id, title: "Movie", sub: "" }); else { stack[stack.length - 1] = { name: "movies", arg: { find: raw } }; render(""); } }
   else if (app === "web") openWeb(webUrl(raw));
   else if (app === "wp") setWallpaper(raw);
+  else if (app === "market") mpOpen("q:" + raw);
 });
 $("#homebar").addEventListener("click", () => { click(); if (ccOpen) closeCC(); else if (cur().name === "lock") go("home", {}, true); else home(); });
 $("#status").addEventListener("click", () => { ccOpen ? closeCC() : openCC(); });
@@ -1132,6 +1185,8 @@ function fit() { scale = Math.min(innerWidth / 450, innerHeight / 1018) || 1; $(
 addEventListener("resize", fit);
 
 /* ---------- start ---------- */
+try { const r = JSON.parse(localStorage.getItem("lumenPhone.ret") || "null"); localStorage.removeItem("lumenPhone.ret");
+  if (r && r.s === "market" && Date.now() - r.t < 2 * 3600000) stack = [{ name: "home", arg: {} }, { name: "market", arg: {} }]; } catch (e) {}
 fit(); paint(); setBattery(BAT, 0); render("rise"); readIn();
 if (P.get("demo")) {         // ?demo=1 : fake data, to look at the screens in a normal browser
   REG = { name: "Serenity Lake", gx: 1000, gy: 1000, x: 128, y: 96, face: 90 };
