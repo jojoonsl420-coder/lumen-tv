@@ -22,7 +22,16 @@ button,input{font:inherit;color:inherit;border:0;background:none;outline:none}
 button{cursor:pointer}
 img{display:block}
 ::-webkit-scrollbar{display:none}
-#ph{position:absolute;left:0;top:0;width:450px;height:1018px;transform-origin:0 0;overflow:hidden;border-radius:46px;background:#0a0b14}
+#ph{position:absolute;left:0;top:0;width:450px;height:1018px;transform-origin:0 0;overflow:hidden;background:#0a0b14}
+/* v1.7: the screen runs right up to the phone's edge. The screen part has square corners, so the page paints
+   its own corners to match the phone around it: the polished edge, then the phone colour, curving with the frame.
+   (Screen 66.8 x 151.1 mm on a 74 x 158 mm phone with 11.5 mm corners; 6.74 px per mm.) */
+#ph::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:9999;
+  --cg:transparent 53.4px,var(--pe,#5c5e64) 54px,var(--pe,#5c5e64) 69px,var(--pc,#33363d) 69.6px;
+  background:radial-gradient(circle at 100% 100%,var(--cg)) 0 0/53px 54px no-repeat,
+    radial-gradient(circle at 0 100%,var(--cg)) 100% 0/53px 54px no-repeat,
+    radial-gradient(circle at 100% 0,var(--cg)) 0 100%/53px 54px no-repeat,
+    radial-gradient(circle at 0 0,var(--cg)) 100% 100%/53px 54px no-repeat}
 /* ---------- wallpaper ---------- */
 #wall{position:absolute;inset:0;transition:background .6s}
 .w-lumen{background:radial-gradient(120% 60% at 15% 0%,#3b5bff,transparent 60%),radial-gradient(120% 60% at 100% 100%,#b56bff,transparent 60%),#0a0b14}
@@ -347,7 +356,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
    phone's scripts: they send #in:… (battery, alerts, radar, buttons),
    the page posts back over the phone's private https line.
    ===================================================================== */
-const VERSION = "1.6";
+const VERSION = "1.7";
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -488,6 +497,10 @@ function paint() {
   const root = $("#ph").style;
   root.setProperty("--mine", grey ? "#4a5a8a" : c);
   root.setProperty("--mine2", grey ? "#2b2f44" : `hsl(${(hs.h + 40) % 360} 70% 45%)`);
+  // the corners: phone colour + its polished edge (same maths as the phone: edge = colour x 0.7 + 0.3)
+  const rgb = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
+  root.setProperty("--pc", c);
+  root.setProperty("--pe", "rgb(" + rgb.map(v => Math.round(v * 0.7 + 255 * 0.3)).join(",") + ")");
   const photo = S.wall === "photo" && S.wp;
   $("#wall").className = "w-" + (photo ? "photo" : S.wall === "photo" ? "lumen" : S.wall);
   $("#wall").style.backgroundImage = photo ? `url("${S.wp.replace(/"/g, "%22")}")` : "";
